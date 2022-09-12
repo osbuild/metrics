@@ -1,0 +1,13 @@
+*.csv
+*.log
+*.png
+__pycache__
+
+/.vscode
+/.idea
+/.gdb_history
+
+**/.DS_Store
+
+venv
+.venv
