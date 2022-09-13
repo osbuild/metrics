@@ -51,17 +51,18 @@ def read_file(fname: os.PathLike) -> pandas.DataFrame:
 
 def trendline(values):
     values = list(values)
-    m = 41
-    halfm = m//2
-    kernel = sp.gaussian(m, std=7)
+    n_points = 41
+    half = n_points//2
+    kernel = sp.gaussian(n_points, std=7)
     kernel /= sum(kernel)
     # pad the original values with the last value for half the kernel size
-    values = values + ([values[-1]] * halfm)
-    tl = sp.convolve(values, kernel, mode="same")
-    tl = tl[:-halfm]
-    return tl.tolist()
+    values = values + ([values[-1]] * half)
+    tline = sp.convolve(values, kernel, mode="same")
+    tline = tline[:-half]
+    return tline.tolist()
 
 
+# pylint: disable=too-many-statements,too-many-locals
 def main():
     cust_dtypes = {
         "org_id": str,
@@ -85,8 +86,8 @@ def main():
     pkgfreq = {}
     for pkgs in builds.packages:
         for pkg in set(pkgs):
-            n = pkgfreq.get(pkg, 0)
-            pkgfreq[pkg] = n + 1
+            count = pkgfreq.get(pkg, 0)
+            pkgfreq[pkg] = count + 1
 
     print("## Most frequently selected packages")
     for idx, (name, count) in enumerate(sorted(pkgfreq.items(), key=lambda item: item[1], reverse=True)):
@@ -97,8 +98,8 @@ def main():
 
     imgfreq = {}
     for img in builds.image_type:
-        n = imgfreq.get(img, 0)
-        imgfreq[img] = n + 1
+        count = imgfreq.get(img, 0)
+        imgfreq[img] = count + 1
 
     print("## Image types")
     for idx, (name, count) in enumerate(sorted(imgfreq.items(), key=lambda item: item[1], reverse=True)):
@@ -107,8 +108,8 @@ def main():
 
     userfreq = {}
     for user in builds.org_id:
-        n = userfreq.get(user, 0)
-        userfreq[user] = n + 1
+        count = userfreq.get(user, 0)
+        userfreq[user] = count + 1
 
     print("## Biggest orgs")
     for idx, (org_id, count) in enumerate(sorted(userfreq.items(), key=lambda item: item[1], reverse=True)):
