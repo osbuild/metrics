@@ -62,88 +62,86 @@ def trendline(values):
     return tl.tolist()
 
 
-cust_dtypes = {
-    "org_id": str,
-    "org_name": str,
-    "strategic": str,
-}
-customers = pandas.read_csv("Customers.csv", delimiter=",",
-                            header=0, names=["org_id", "org_name", "strategic"], dtype=cust_dtypes)
+def main():
+    cust_dtypes = {
+        "org_id": str,
+        "org_name": str,
+        "strategic": str,
+    }
+    customers = pandas.read_csv("Customers.csv", delimiter=",",
+                                header=0, names=["org_id", "org_name", "strategic"], dtype=cust_dtypes)
 
-fname = sys.argv[1]
-builds = read_file(fname)
-print(f"Imported {len(builds)} records")
+    fname = sys.argv[1]
+    builds = read_file(fname)
+    print(f"Imported {len(builds)} records")
 
-print_summary(builds)
+    print_summary(builds)
+
+    dates = np.array([d.date() for d in builds.created_at], dtype=np.datetime64)
+
+    all_dates = np.arange(dates[0], dates[-1], dtype=np.datetime64)
+    counts = np.array([sum(d == dates) for d in all_dates])
+
+    pkgfreq = {}
+    for idx, pkgs in enumerate(builds.packages):
+        for pkg in list(pkgs):
+            n = pkgfreq.get(pkg, 0)
+            pkgfreq[pkg] = n + 1
+
+    print("## Most frequently selected packages")
+    for idx, (name, count) in enumerate(sorted(pkgfreq.items(), key=lambda item: item[1], reverse=True)):
+        print(f"{idx+1:3d}. {name:40s} {count:5d}")
+        if idx == 9:
+            break
+    print("---------------------------------")
+
+    imgfreq = {}
+    for img in builds.image_type:
+        n = imgfreq.get(img, 0)
+        imgfreq[img] = n + 1
+
+    print("## Image types")
+    for idx, (name, count) in enumerate(sorted(imgfreq.items(), key=lambda item: item[1], reverse=True)):
+        print(f"{idx+1:3d}. {name:40s} {count:5d}")
+    print("---------------------------------")
+
+    userfreq = {}
+    for user in builds.org_id:
+        n = userfreq.get(user, 0)
+        userfreq[user] = n + 1
+
+    org_dict = {}
+    for _, user in customers.iterrows():
+        org_dict[user.org_id] = user.org_name
+
+    print("## Biggest orgs")
+    for idx, (org_id, count) in enumerate(sorted(userfreq.items(), key=lambda item: item[1], reverse=True)):
+        name = org_dict.get(org_id, org_id)
+        print(f"{idx+1:3d}. {name:40s} {count:5d}")
+        if idx == 19:
+            break
+    print("------------")
+
+    plt.figure(figsize=(16, 9), dpi=100)
+
+    plt.plot(all_dates, counts, ".", markersize=12, label="n builds")
+    trend = trendline(counts)
+    plt.plot(all_dates, trend, label="trendline")
+
+    now = datetime.now()
+    nowline = [now, now]
+    plt.plot(nowline, [0, np.max(counts)], linestyle="--", color="black", label="now")
+
+    plt.grid()
+    plt.axis(ymin=0)
+    plt.xlabel("dates")
+    plt.ylabel("builds per day")
+    plt.legend(loc="best")
+
+    imgname = os.path.splitext(fname)[0] + ".png"
+    plt.savefig(imgname)
+    print(f"Saved plot as {imgname}")
 
 
-dates = np.array([d.date() for d in builds.created_at], dtype=np.datetime64)
-
-all_dates = np.arange(dates[0], dates[-1], dtype=np.datetime64)
-counts = np.array([sum(d == dates) for d in all_dates])
-
-pkgfreq = {}
-for idx, pkgs in enumerate(builds.packages):
-    for pkg in list(pkgs):
-        n = pkgfreq.get(pkg, 0)
-        pkgfreq[pkg] = n + 1
-
-
-print()
-print("## Most frequently selected packages")
-for idx, (name, count) in enumerate(sorted(pkgfreq.items(), key=lambda item: item[1], reverse=True)):
-    print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    if idx == 9:
-        break
-print("---------------------------------")
-
-imgfreq = {}
-for img in builds.image_type:
-    n = imgfreq.get(img, 0)
-    imgfreq[img] = n + 1
-
-print("## Image types")
-for idx, (name, count) in enumerate(sorted(imgfreq.items(), key=lambda item: item[1], reverse=True)):
-    print(f"{idx+1:3d}. {name:40s} {count:5d}")
-print("---------------------------------")
-
-userfreq = {}
-for user in builds.org_id:
-    n = userfreq.get(user, 0)
-    userfreq[user] = n + 1
-
-org_dict = {}
-for _, user in customers.iterrows():
-    org_dict[user.org_id] = user.org_name
-
-print("## Biggest orgs")
-for idx, (org_id, count) in enumerate(sorted(userfreq.items(), key=lambda item: item[1], reverse=True)):
-    name = org_dict.get(org_id, org_id)
-    print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    if idx == 19:
-        break
-print("------------")
-
-
-plt.figure(figsize=(16, 9), dpi=100)
-
-plt.plot(all_dates, counts, ".", markersize=12, label="n builds")
-trend = trendline(counts)
-plt.plot(all_dates, trend, label="trendline")
-
-
-now = datetime.now()
-nowline = [now, now]
-plt.plot(nowline, [0, np.max(counts)], linestyle="--", color="black", label="now")
-plt.grid()
-plt.axis(ymin=0)
-
-plt.xlabel("dates")
-plt.ylabel("builds per day")
-plt.legend(loc="best")
-
-imgname = os.path.splitext(fname)[0] + ".png"
-plt.savefig(imgname)
-print(f"Saved plot as {imgname}")
-
-# plt.show()
+if __name__ == "__main__":
+    main()
