@@ -110,13 +110,14 @@ def main():
         n = userfreq.get(user, 0)
         userfreq[user] = n + 1
 
-    org_dict = {}
-    for _, user in customers.iterrows():
-        org_dict[user.org_id] = user.org_name
-
     print("## Biggest orgs")
     for idx, (org_id, count) in enumerate(sorted(userfreq.items(), key=lambda item: item[1], reverse=True)):
-        name = org_dict.get(org_id, org_id)
+        name = org_id
+        user_idx = customers.org_id == org_id
+        if sum(user_idx) == 1:
+            name = customers.org_name[user_idx].values.item()
+        elif sum(user_idx) > 1:
+            raise ValueError(f"Multiple ({sum(user_idx)}) entries with same org_id ({org_id}) in customer data")
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
         if idx == 19:
             break
