@@ -51,7 +51,7 @@ def read_file(fname: os.PathLike) -> pandas.DataFrame:
 
 def trendline(values):
     values = list(values)
-    n_points = 41
+    n_points = len(values)
     half = n_points//2
     kernel = sp.gaussian(n_points, std=7)
     kernel /= sum(kernel)
