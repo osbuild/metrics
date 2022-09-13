@@ -83,8 +83,8 @@ def main():
     counts = np.array([sum(d == dates) for d in all_dates])
 
     pkgfreq = {}
-    for idx, pkgs in enumerate(builds.packages):
-        for pkg in list(pkgs):
+    for pkgs in builds.packages:
+        for pkg in set(pkgs):
             n = pkgfreq.get(pkg, 0)
             pkgfreq[pkg] = n + 1
 
