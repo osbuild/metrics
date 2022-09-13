@@ -33,6 +33,22 @@ def print_summary(builds):
     print(f"- Builds with custom repos: {n_with_repos}")
 
 
+def read_file(fname: os.PathLike) -> pandas.DataFrame:
+    cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+    cache_dir = os.path.join(cache_home, "osbuild-metrics")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_fname = os.path.join(cache_dir, os.path.basename(os.path.splitext(fname)[0]) + ".pkl")
+    if os.path.exists(cache_fname):
+        print(f"Using cached pickle file at {cache_fname}")
+        # TODO: handle exceptions
+        return pandas.read_pickle(cache_fname)
+
+    builds = reader.read_dump(fname)
+    print(f"Saving cached pickle file at {cache_fname}")
+    builds.to_pickle(cache_fname)
+    return builds
+
+
 def trendline(values):
     values = list(values)
     m = 41
@@ -55,7 +71,7 @@ customers = pandas.read_csv("Customers.csv", delimiter=",",
                             header=0, names=["org_id", "org_name", "strategic"], dtype=cust_dtypes)
 
 fname = sys.argv[1]
-builds = reader.read_dump(fname)
+builds = read_file(fname)
 print(f"Imported {len(builds)} records")
 
 print_summary(builds)
