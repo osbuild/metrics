@@ -2,6 +2,7 @@ import os
 import sys
 
 from datetime import datetime, timedelta
+from typing import Tuple
 
 import pandas
 import numpy as np
@@ -51,6 +52,20 @@ def print_summary(builds):
 
     n_with_repos = sum(1 if len(repos) else 0 for repos in builds.payload_repositories)
     print(f"- Builds with custom repos: {n_with_repos}")
+
+
+def users_over_time(builds: pandas.DataFrame,
+                    start: datetime, end: datetime, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
+    t_start = start
+    bin_starts = []
+    n_users = []
+    while t_start+period < end:
+        idxs = (builds.created_at >= t_start) & (builds.created_at < t_start+period)
+        n_users.append(len(set(builds.org_id.loc[idxs])))
+        bin_starts.append(t_start)
+        t_start += period
+
+    return np.array(bin_starts), np.array(n_users)
 
 
 def read_file(fname: os.PathLike) -> pandas.DataFrame:
