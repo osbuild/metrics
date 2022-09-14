@@ -118,6 +118,9 @@ def main():
     builds = read_file(fname)
     print(f"Imported {len(builds)} records")
 
+    builds = filter_users(builds, customers)
+    print(f"{len(builds)} records after user filtering")
+
     if len(sys.argv) > 2:
         start_str = sys.argv[2]
         start = datetime.fromisoformat(start_str)
