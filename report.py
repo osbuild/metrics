@@ -56,6 +56,35 @@ def print_summary(builds):
     print(f"- Builds with custom repos: {n_with_repos}")
 
 
+def print_weekly_users(builds: pandas.DataFrame, customers: pandas.DataFrame, start: datetime):
+    end = start + timedelta(days=7)  # one week
+    week_idxs = (builds.created_at >= start) & (builds.created_at < end)
+    week_users = set(builds.org_id.loc[week_idxs])
+
+    pre_week_idxs = (builds.created_at < start)
+    pre_users = set(builds.org_id.loc[pre_week_idxs])  # users seen before start day
+
+    start_str = start.strftime("%A, %d %B %Y")
+    print(f"Number of unique users for week of {start_str}: {len(week_users)}")
+
+    new_users = week_users - pre_users
+    print(f"Number of new users for week of {start_str}: {len(new_users)}")
+
+
+def builds_over_time(builds: pandas.DataFrame,
+                     start: datetime, end: datetime, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
+    t_start = start
+    bin_starts = []
+    n_builds = []
+    while t_start+period < end:
+        idxs = (builds.created_at >= t_start) & (builds.created_at < t_start+period)
+        n_builds.append(sum(idxs))
+        bin_starts.append(t_start)
+        t_start += period
+
+    return np.array(bin_starts), np.array(n_builds)
+
+
 def users_over_time(builds: pandas.DataFrame,
                     start: datetime, end: datetime, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
     t_start = start
@@ -122,6 +151,9 @@ def main():
 
     builds = filter_users(builds, customers)
     print(f"{len(builds)} records after user filtering")
+
+    # print week users before filtering time
+    print_weekly_users(builds, customers, start=datetime(2022, 9, 5))
 
     if len(sys.argv) > 2:
         start_str = sys.argv[2]
