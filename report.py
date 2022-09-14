@@ -19,7 +19,8 @@ def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> panda
         matching_idxs = customers.org_name.str.match(value, case=False)
         return customers.org_id.loc[matching_idxs]
 
-    patterns = ["red hat", "redhat", "insights qa"]
+    with open("./userfilter.txt", encoding="utf-8") as filterfile:
+        patterns = filterfile.read().split("\n")
 
     rm_ids = pandas.Series(dtype=str)
     for pattern in patterns:
