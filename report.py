@@ -83,36 +83,25 @@ def main():
     all_dates = np.arange(dates[0], dates[-1], dtype=np.datetime64)
     counts = np.array([sum(d == dates) for d in all_dates])
 
-    pkgfreq = {}
-    for pkgs in builds.packages:
-        for pkg in set(pkgs):
-            count = pkgfreq.get(pkg, 0)
-            pkgfreq[pkg] = count + 1
+    all_packages = []
+    for pkg_list in builds.packages:
+        all_packages.extend(set(pkg_list))
 
     print("## Most frequently selected packages")
-    for idx, (name, count) in enumerate(sorted(pkgfreq.items(), key=lambda item: item[1], reverse=True)):
+    pkg_counts = pandas.value_counts(all_packages)
+    for idx, (name, count) in enumerate(pkg_counts.iloc[:20].items()):
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
-        if idx == 9:
-            break
     print("---------------------------------")
-
-    imgfreq = {}
-    for img in builds.image_type:
-        count = imgfreq.get(img, 0)
-        imgfreq[img] = count + 1
 
     print("## Image types")
-    for idx, (name, count) in enumerate(sorted(imgfreq.items(), key=lambda item: item[1], reverse=True)):
+    type_counts = builds.image_type.value_counts()
+    for idx, (name, count) in enumerate(type_counts.items()):
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
     print("---------------------------------")
 
-    userfreq = {}
-    for user in builds.org_id:
-        count = userfreq.get(user, 0)
-        userfreq[user] = count + 1
-
     print("## Biggest orgs")
-    for idx, (org_id, count) in enumerate(sorted(userfreq.items(), key=lambda item: item[1], reverse=True)):
+    org_counts = builds.org_id.value_counts()
+    for idx, (org_id, count) in enumerate(org_counts.iloc[:20].items()):
         name = org_id
         user_idx = customers.org_id == org_id
         if sum(user_idx) == 1:
@@ -120,8 +109,6 @@ def main():
         elif sum(user_idx) > 1:
             raise ValueError(f"Multiple ({sum(user_idx)}) entries with same org_id ({org_id}) in customer data")
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
-        if idx == 19:
-            break
     print("------------")
 
     plt.figure(figsize=(16, 9), dpi=100)
