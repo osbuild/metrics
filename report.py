@@ -112,12 +112,23 @@ def main():
     customers = pandas.read_csv("Customers.csv", delimiter=",",
                                 header=0, names=["org_id", "org_name", "strategic"], dtype=cust_dtypes)
 
+    # TODO: proper argument handling
     fname = sys.argv[1]
+
     builds = read_file(fname)
     print(f"Imported {len(builds)} records")
 
-    start = builds.created_at.min()
-    end = builds.created_at.max()
+    if len(sys.argv) > 2:
+        start_str = sys.argv[2]
+        start = datetime.fromisoformat(start_str)
+    else:
+        start = builds.created_at.min()
+
+    if len(sys.argv) > 3:
+        end_str = sys.argv[3]
+        end = datetime.fromisoformat(end_str)
+    else:
+        end = builds.created_at.max()
 
     builds = slice_time(builds, start, end)
     print(f"{len(builds)} between {start} and {end}")
