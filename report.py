@@ -171,6 +171,7 @@ def main():
     all_dates = np.arange(build_dates[0], build_dates[-1], dtype="datetime64[D]")
     builds_per_day = np.array([sum(d == build_dates) for d in all_dates])
 
+    # plot builds per day
     plt.figure(figsize=(16, 9), dpi=100)
 
     plt.plot(all_dates, builds_per_day, ".", markersize=12, label="n builds")
@@ -187,7 +188,23 @@ def main():
     plt.ylabel("builds per day")
     plt.legend(loc="best")
 
-    imgname = os.path.splitext(fname)[0] + ".png"
+    imgname = os.path.splitext(fname)[0] + "-builds.png"
+    plt.savefig(imgname)
+    print(f"Saved plot as {imgname}")
+
+    # plot weekly users
+    plt.figure(figsize=(16, 9), dpi=100)
+    p_days = 7
+    t_starts, users = users_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
+    plt.plot(t_starts, users)
+    plt.xticks(t_starts)
+
+    plt.grid()
+    plt.axis(ymin=0)
+    plt.xlabel(f"beginning of {p_days} day period")
+    plt.ylabel("number of unique users")
+
+    imgname = os.path.splitext(fname)[0] + "-users.png"
     plt.savefig(imgname)
     print(f"Saved plot as {imgname}")
 
