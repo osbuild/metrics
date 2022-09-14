@@ -78,11 +78,6 @@ def main():
 
     print_summary(builds)
 
-    dates = np.array([d.date() for d in builds.created_at], dtype=np.datetime64)
-
-    all_dates = np.arange(dates[0], dates[-1], dtype=np.datetime64)
-    counts = np.array([sum(d == dates) for d in all_dates])
-
     all_packages = []
     for pkg_list in builds.packages:
         all_packages.extend(set(pkg_list))
@@ -111,15 +106,19 @@ def main():
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
     print("------------")
 
+    build_dates = builds.created_at.values.astype("datetime64[D]")
+    all_dates = np.arange(build_dates[0], build_dates[-1], dtype="datetime64[D]")
+    builds_per_day = np.array([sum(d == build_dates) for d in all_dates])
+
     plt.figure(figsize=(16, 9), dpi=100)
 
-    plt.plot(all_dates, counts, ".", markersize=12, label="n builds")
-    trend = trendline(counts)
+    plt.plot(all_dates, builds_per_day, ".", markersize=12, label="n builds")
+    trend = trendline(builds_per_day)
     plt.plot(all_dates, trend, label="trendline")
 
     now = datetime.now()
     nowline = [now, now]
-    plt.plot(nowline, [0, np.max(counts)], linestyle="--", color="black", label="now")
+    plt.plot(nowline, [0, np.max(builds_per_day)], linestyle="--", color="black", label="now")
 
     plt.grid()
     plt.axis(ymin=0)
