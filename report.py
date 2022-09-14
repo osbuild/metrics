@@ -12,6 +12,24 @@ import scipy.signal as sp
 from ibmetrics import reader
 
 
+def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> pandas.DataFrame:
+
+    def get_ids(value: str) -> pandas.Series:
+        matching_idxs = customers.org_name.str.match(value, case=False)
+        return customers.org_id.loc[matching_idxs]
+
+    patterns = ["red hat", "redhat", "insights qa"]
+
+    rm_ids = pandas.Series(dtype=str)
+    for pattern in patterns:
+        rm_ids = pandas.concat([rm_ids, get_ids(pattern)], ignore_index=True)
+
+    for org_id in rm_ids.values:
+        builds = builds.loc[builds.org_id != org_id]
+
+    return builds
+
+
 def print_summary(builds):
     print("## Summary")
     start = builds.created_at.min()
