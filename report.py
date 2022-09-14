@@ -22,12 +22,13 @@ def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> panda
     with open("./userfilter.txt", encoding="utf-8") as filterfile:
         patterns = filterfile.read().split("\n")
 
-    rm_ids = pandas.Series(dtype=str)
     for pattern in patterns:
-        rm_ids = pandas.concat([rm_ids, get_ids(pattern)], ignore_index=True)
-
-    for org_id in rm_ids.values:
-        builds = builds.loc[builds.org_id != org_id]
+        if not pattern:
+            # don't filter empty patterns
+            continue
+        # rm_ids = pandas.concat([rm_ids, get_ids(pattern)], ignore_index=True)
+        for rm_id in get_ids(pattern):
+            builds = builds.loc[builds.org_id != rm_id]
 
     return builds
 
