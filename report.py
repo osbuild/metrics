@@ -1,7 +1,7 @@
 import os
 import sys
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas
 import numpy as np
@@ -14,10 +14,12 @@ from ibmetrics import reader
 
 def print_summary(builds):
     print("## Summary")
-    dates = builds["created_at"].astype("datetime64[D]")
-    start = min(dates)
-    end = max(dates)
+    start = builds.created_at.min()
+    end = builds.created_at.max()
     print(f"_Period: {start} - {end}:_")
+
+    print(f"Number of users: {len(set(builds.org_id))}")
+
     n_with_packages = sum(1 if len(pkg) else 0 for pkg in builds.packages)
     print(f"- Builds with packages: {n_with_packages}")
 
@@ -62,6 +64,11 @@ def trendline(values):
     return tline.tolist()
 
 
+def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime):
+    idxs = (builds.created_at >= start) & (builds.created_at <= end)
+    return builds.loc[idxs]
+
+
 # pylint: disable=too-many-statements,too-many-locals
 def main():
     cust_dtypes = {
@@ -75,6 +82,12 @@ def main():
     fname = sys.argv[1]
     builds = read_file(fname)
     print(f"Imported {len(builds)} records")
+
+    start = builds.created_at.min()
+    end = builds.created_at.max()
+
+    builds = slice_time(builds, start, end)
+    print(f"{len(builds)} between {start} and {end}")
 
     print_summary(builds)
 
