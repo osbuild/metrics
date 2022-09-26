@@ -176,6 +176,12 @@ def trendline(values):
     return tline.tolist()
 
 
+def moving_average(values):
+    sums = np.cumsum(values)
+    weights = np.arange(1, len(sums)+1, 1)
+    return sums / weights
+
+
 def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime):
     idxs = (builds.created_at >= start) & (builds.created_at <= end)
     return builds.loc[idxs]
