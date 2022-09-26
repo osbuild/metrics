@@ -35,12 +35,14 @@ def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> panda
 
 
 def print_summary(builds):
-    print("## Summary")
+    print("Summary")
+    print("=======\n")
     start = builds["created_at"].min()
     end = builds["created_at"].max()
-    print(f"_Period: {start} - {end}:_")
+    print(f"Period: {start} - {end}\n")
 
-    print(f"Number of users: {len(set(builds['org_id']))}")
+    print(f"- Total builds: {len(builds)}")
+    print(f"- Number of users: {len(builds['org_id'].unique())}")
 
     n_with_packages = sum(1 if len(pkg) else 0 for pkg in builds["packages"])
     print(f"- Builds with packages: {n_with_packages}")
