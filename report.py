@@ -7,6 +7,7 @@ from typing import Tuple
 import pandas
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import scipy.signal as sp
 
 
@@ -69,61 +70,6 @@ def print_weekly_users(builds: pandas.DataFrame, customers: pandas.DataFrame, st
 
     new_users = week_users - pre_users
     print(f"Number of new users for week of {start_str}: {len(new_users)}")
-
-
-def plot_weekly_users(builds: pandas.DataFrame):
-    # find the last Monday before the start of the data
-
-    start = builds.created_at.min()
-    while start.isoweekday() != 1:
-        start = start - timedelta(days=1)
-    first_mon = start
-    last_date = builds.created_at.max()
-
-    users_so_far = set()
-    n_week_users = []
-    n_new_users = []
-
-    start_dates = []
-
-    while start < last_date:
-        end = start + timedelta(days=7)  # one week
-        week_idxs = (builds.created_at >= start) & (builds.created_at < end)
-        week_users = set(builds.org_id.loc[week_idxs])
-
-        new_users = week_users - users_so_far
-
-        n_week_users.append(len(week_users))
-        n_new_users.append(len(new_users))
-        start_dates.append(start)
-
-        users_so_far.update(week_users)
-        start = end
-
-    axes = plt.axes()
-    axes.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
-    axes.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
-    axes.legend(loc="best")
-    start_month = first_mon.replace(day=1)
-    end_month = last_date.replace(month=last_date.month+1, day=1)
-    xticks = []
-    tick = start_month
-    while tick <= end_month:
-        xticks.append(tick)
-        month = tick.month
-        year = tick.year
-        if month + 1 > 12:
-            tick = tick.replace(year=year+1, month=1)
-        else:
-            tick = tick.replace(month=month+1)
-
-    axes.set_xticks(xticks)
-    axes.grid(True)
-    axes.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-
-    # rotate xtick labels 45 degrees cw for readability
-    for label in axes.get_xticklabels():
-        label.set_rotation(45)
 
 
 def builds_over_time(builds: pandas.DataFrame,
@@ -194,6 +140,99 @@ def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime):
     return builds.loc[idxs]
 
 
+def plot_build_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
+    t_starts, build_counts = builds_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
+    plt.plot(t_starts, build_counts, ".b", markersize=12, label="n builds")
+    plt.xticks(t_starts)
+
+    builds_trend = moving_average(build_counts)
+    plt.plot(t_starts, builds_trend, "-b", label="builds mov. avg.")
+
+    # now = datetime.now()
+    # nowline = [now, now]
+    # plt.plot(nowline, [0, np.max(build_counts)], linestyle="--", color="black", label="now")
+
+    plt.grid()
+    plt.axis(ymin=0, xmin=start)
+    plt.xlabel("dates")
+    plt.ylabel("number of builds")
+    plt.legend(loc="best")
+
+
+def plot_user_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
+    t_starts, user_counts = users_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
+    plt.plot(t_starts, user_counts, ".g", markersize=12, label="n users")
+    plt.xticks(t_starts)
+
+    user_trend = moving_average(user_counts)
+    plt.plot(t_starts, user_trend, "-g", label="users mov. avg.")
+
+    # plt.grid()
+    plt.axis(ymin=0, xmin=start)
+    plt.xlabel(f"beginning of {p_days} day period")
+    plt.ylabel("")
+    plt.legend(loc="best")
+
+
+def plot_image_types(builds: pandas.DataFrame):
+    image_types = builds.image_type.value_counts()
+    plt.pie(image_types.values, labels=image_types.index)
+
+
+def plot_weekly_users(builds: pandas.DataFrame):
+    # find the last Monday before the start of the data
+    start = builds.created_at.min()
+    while start.isoweekday() != 1:
+        start = start - timedelta(days=1)
+    first_mon = start
+    last_date = builds.created_at.max()
+
+    users_so_far = set()
+    n_week_users = []
+    n_new_users = []
+
+    start_dates = []
+
+    while start < last_date:
+        end = start + timedelta(days=7)  # one week
+        week_idxs = (builds.created_at >= start) & (builds.created_at < end)
+        week_users = set(builds.org_id.loc[week_idxs])
+
+        new_users = week_users - users_so_far
+
+        n_week_users.append(len(week_users))
+        n_new_users.append(len(new_users))
+        start_dates.append(start)
+
+        users_so_far.update(week_users)
+        start = end
+
+    ax = plt.axes()
+    ax.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
+    ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
+    ax.legend(loc="best")
+    start_month = first_mon.replace(day=1)
+    end_month = last_date.replace(month=last_date.month+1, day=1)
+    xticks = []
+    tick = start_month
+    while tick <= end_month:
+        xticks.append(tick)
+        month = tick.month
+        year = tick.year
+        if month + 1 > 12:
+            tick = tick.replace(year=year+1, month=1)
+        else:
+            tick = tick.replace(month=month+1)
+
+    ax.set_xticks(xticks)
+    ax.grid(True)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+
+    # rotate xtick labels 45 degrees cw for readability
+    for label in ax.get_xticklabels():
+        label.set_rotation(45)
+
+
 # pylint: disable=too-many-statements,too-many-locals
 def main():
     cust_dtypes = {
@@ -212,9 +251,6 @@ def main():
 
     builds = filter_users(builds, customers)
     print(f"{len(builds)} records after user filtering")
-
-    # print week users before filtering time
-    print_weekly_users(builds, customers, start=datetime(2022, 9, 5))
 
     if len(sys.argv) > 2:
         start_str = sys.argv[2]
@@ -261,46 +297,37 @@ def main():
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
     print("------------")
 
-    build_dates = builds.created_at.values.astype("datetime64[D]")
-    all_dates = np.arange(build_dates[0], build_dates[-1], dtype="datetime64[D]")
-    builds_per_day = np.array([sum(d == build_dates) for d in all_dates])
+    # plot weekly counts
+    p_days = 7  # 7 day period
 
-    # plot builds per day
+    img_basename = os.path.splitext(os.path.basename(fname))[0]
+
+    # builds counts
     plt.figure(figsize=(16, 9), dpi=100)
-
-    plt.plot(all_dates, builds_per_day, ".", markersize=12, label="n builds")
-    trend = trendline(builds_per_day)
-    plt.plot(all_dates, trend, label="trendline")
-
-    now = datetime.now()
-    nowline = [now, now]
-    plt.plot(nowline, [0, np.max(builds_per_day)], linestyle="--", color="black", label="now")
-
-    plt.grid()
-    plt.axis(ymin=0)
-    plt.xlabel("dates")
-    plt.ylabel("builds per day")
-    plt.legend(loc="best")
-
-    imgname = os.path.splitext(fname)[0] + "-builds.png"
+    plot_build_counts(builds, start, end, p_days)
+    imgname = img_basename + "-builds.png"
     plt.savefig(imgname)
-    print(f"Saved plot as {imgname}")
+    print(f"Saved figure {imgname}")
 
-    # plot weekly users
+    # user counts
     plt.figure(figsize=(16, 9), dpi=100)
-    p_days = 7
-    t_starts, users = users_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
-    plt.plot(t_starts, users)
-    plt.xticks(t_starts)
-
-    plt.grid()
-    plt.axis(ymin=0)
-    plt.xlabel(f"beginning of {p_days} day period")
-    plt.ylabel("number of unique users")
-
-    imgname = os.path.splitext(fname)[0] + "-users.png"
+    plot_user_counts(builds, start, end, p_days)
+    imgname = img_basename + "-users.png"
     plt.savefig(imgname)
-    print(f"Saved plot as {imgname}")
+    print(f"Saved figure {imgname}")
+
+    # image type breakdown
+    plt.figure(figsize=(16, 9), dpi=100)
+    plot_image_types(builds)
+    imgname = img_basename + "-image_types.png"
+    plt.savefig(imgname)
+    print(f"Saved figure {imgname}")
+
+    plt.figure(figsize=(16, 9), dpi=100)
+    plot_weekly_users(builds)
+    imgname = img_basename + "-weekly_users.png"
+    plt.savefig(imgname)
+    print(f"Saved figure {imgname}")
 
 
 if __name__ == "__main__":
