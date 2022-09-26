@@ -17,8 +17,8 @@ from ibmetrics import reader
 def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> pandas.DataFrame:
 
     def get_ids(value: str) -> pandas.Series:
-        matching_idxs = customers.org_name.str.match(value, case=False)
-        return customers.org_id.loc[matching_idxs]
+        matching_idxs = customers["org_name"].str.match(value, case=False)
+        return customers["org_id"].loc[matching_idxs]
 
     with open("./userfilter.txt", encoding="utf-8") as filterfile:
         patterns = filterfile.read().split("\n")
@@ -29,41 +29,41 @@ def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> panda
             continue
         # rm_ids = pandas.concat([rm_ids, get_ids(pattern)], ignore_index=True)
         for rm_id in get_ids(pattern):
-            builds = builds.loc[builds.org_id != rm_id]
+            builds = builds.loc[builds["org_id"] != rm_id]
 
     return builds
 
 
 def print_summary(builds):
     print("## Summary")
-    start = builds.created_at.min()
-    end = builds.created_at.max()
+    start = builds["created_at"].min()
+    end = builds["created_at"].max()
     print(f"_Period: {start} - {end}:_")
 
-    print(f"Number of users: {len(set(builds.org_id))}")
+    print(f"Number of users: {len(set(builds['org_id']))}")
 
-    n_with_packages = sum(1 if len(pkg) else 0 for pkg in builds.packages)
+    n_with_packages = sum(1 if len(pkg) else 0 for pkg in builds["packages"])
     print(f"- Builds with packages: {n_with_packages}")
 
-    avg_packages = np.mean([len(pkg) for pkg in builds.packages])
+    avg_packages = np.mean([len(pkg) for pkg in builds["packages"]])
     print(f"- Average number of packages per build: {avg_packages:.2f}")
-    avg_packages_nonempty = np.mean([len(pkg) for pkg in builds.packages if len(pkg)])
+    avg_packages_nonempty = np.mean([len(pkg) for pkg in builds["packages"] if len(pkg)])
     print(f"- Average number of packages per build (excluding empty): {avg_packages_nonempty:.2f}")
 
-    n_with_fs = sum(1 if len(fs) else 0 for fs in builds.filesystem)
+    n_with_fs = sum(1 if len(fs) else 0 for fs in builds["filesystem"])
     print(f"- Builds with filesystem customizations: {n_with_fs}")
 
-    n_with_repos = sum(1 if len(repos) else 0 for repos in builds.payload_repositories)
+    n_with_repos = sum(1 if len(repos) else 0 for repos in builds["payload_repositories"])
     print(f"- Builds with custom repos: {n_with_repos}")
 
 
 def print_weekly_users(builds: pandas.DataFrame, customers: pandas.DataFrame, start: datetime):
     end = start + timedelta(days=7)  # one week
-    week_idxs = (builds.created_at >= start) & (builds.created_at < end)
-    week_users = set(builds.org_id.loc[week_idxs])
+    week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
+    week_users = set(builds["org_id"].loc[week_idxs])
 
-    pre_week_idxs = (builds.created_at < start)
-    pre_users = set(builds.org_id.loc[pre_week_idxs])  # users seen before start day
+    pre_week_idxs = (builds["created_at"] < start)
+    pre_users = set(builds["org_id"].loc[pre_week_idxs])  # users seen before start day
 
     start_str = start.strftime("%A, %d %B %Y")
     print(f"Number of unique users for week of {start_str}: {len(week_users)}")
@@ -78,7 +78,7 @@ def builds_over_time(builds: pandas.DataFrame,
     bin_starts = []
     n_builds = []
     while t_start+period < end:
-        idxs = (builds.created_at >= t_start) & (builds.created_at < t_start+period)
+        idxs = (builds["created_at"] >= t_start) & (builds["created_at"] < t_start+period)
         n_builds.append(sum(idxs))
         bin_starts.append(t_start)
         t_start += period
@@ -92,8 +92,8 @@ def users_over_time(builds: pandas.DataFrame,
     bin_starts = []
     n_users = []
     while t_start+period < end:
-        idxs = (builds.created_at >= t_start) & (builds.created_at < t_start+period)
-        n_users.append(len(set(builds.org_id.loc[idxs])))
+        idxs = (builds["created_at"] >= t_start) & (builds["created_at"] < t_start+period)
+        n_users.append(len(set(builds["org_id"].loc[idxs])))
         bin_starts.append(t_start)
         t_start += period
 
@@ -136,7 +136,7 @@ def moving_average(values):
 
 
 def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime):
-    idxs = (builds.created_at >= start) & (builds.created_at <= end)
+    idxs = (builds["created_at"] >= start) & (builds["created_at"] <= end)
     return builds.loc[idxs]
 
 
@@ -186,11 +186,11 @@ def plot_image_types(builds: pandas.DataFrame):
 
 def plot_weekly_users(builds: pandas.DataFrame):
     # find the last Monday before the start of the data
-    start = builds.created_at.min()
+    start = builds["created_at"].min()
     while start.isoweekday() != 1:
         start = start - timedelta(days=1)
     first_mon = start
-    last_date = builds.created_at.max()
+    last_date = builds["created_at"].max()
 
     users_so_far = set()
     n_week_users = []
@@ -200,8 +200,8 @@ def plot_weekly_users(builds: pandas.DataFrame):
 
     while start < last_date:
         end = start + timedelta(days=7)  # one week
-        week_idxs = (builds.created_at >= start) & (builds.created_at < end)
-        week_users = set(builds.org_id.loc[week_idxs])
+        week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
+        week_users = set(builds["org_id"].loc[week_idxs])
 
         new_users = week_users - users_so_far
 
@@ -261,13 +261,13 @@ def main():
         start_str = sys.argv[2]
         start = datetime.fromisoformat(start_str)
     else:
-        start = builds.created_at.min()
+        start = builds["created_at"].min()
 
     if len(sys.argv) > 3:
         end_str = sys.argv[3]
         end = datetime.fromisoformat(end_str)
     else:
-        end = builds.created_at.max()
+        end = builds["created_at"].max()
 
     builds = slice_time(builds, start, end)
     print(f"{len(builds)} between {start} and {end}")
@@ -275,7 +275,7 @@ def main():
     print_summary(builds)
 
     all_packages = []
-    for pkg_list in builds.packages:
+    for pkg_list in builds["packages"]:
         all_packages.extend(set(pkg_list))
 
     print("## Most frequently selected packages")
@@ -285,18 +285,18 @@ def main():
     print("---------------------------------")
 
     print("## Image types")
-    type_counts = builds.image_type.value_counts()
+    type_counts = builds["image_type"].value_counts()
     for idx, (name, count) in enumerate(type_counts.items()):
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
     print("---------------------------------")
 
     print("## Biggest orgs")
-    org_counts = builds.org_id.value_counts()
+    org_counts = builds["org_id"].value_counts()
     for idx, (org_id, count) in enumerate(org_counts.iloc[:20].items()):
         name = org_id
-        user_idx = customers.org_id == org_id
+        user_idx = customers["org_id"] == org_id
         if sum(user_idx) == 1:
-            name = customers.org_name[user_idx].values.item()
+            name = customers["org_name"][user_idx].values.item()
         elif sum(user_idx) > 1:
             raise ValueError(f"Multiple ({sum(user_idx)}) entries with same org_id ({org_id}) in customer data")
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
