@@ -234,6 +234,40 @@ def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime):
         label.set_rotation(45)
 
 
+def print_frequent_packages(builds: pandas.DataFrame, limit=20):
+    all_packages = []
+    for pkg_list in builds["packages"]:
+        all_packages.extend(set(pkg_list))
+
+    print("## Most frequently selected packages")
+    pkg_counts = pandas.value_counts(all_packages)
+    for idx, (name, count) in enumerate(pkg_counts.iloc[:limit].items()):
+        print(f"{idx+1:3d}. {name:40s} {count:5d}")
+    print("---------------------------------")
+
+
+def print_image_type_counts(builds):
+    print("## Image types")
+    type_counts = builds["image_type"].value_counts()
+    for idx, (name, count) in enumerate(type_counts.items()):
+        print(f"{idx+1:3d}. {name:40s} {count:5d}")
+    print("---------------------------------")
+
+
+def print_frequent_orgs(builds: pandas.DataFrame, customers: pandas.DataFrame, limit=20):
+    print("## Biggest orgs")
+    org_counts = builds["org_id"].value_counts()
+    for idx, (org_id, count) in enumerate(org_counts.iloc[:limit].items()):
+        name = org_id
+        user_idx = customers["org_id"] == org_id
+        if sum(user_idx) == 1:
+            name = customers["org_name"][user_idx].values.item()
+        elif sum(user_idx) > 1:
+            raise ValueError(f"Multiple ({sum(user_idx)}) entries with same org_id ({org_id}) in customer data")
+        print(f"{idx+1:3d}. {name:40s} {count:5d}")
+    print("------------")
+
+
 # pylint: disable=too-many-statements,too-many-locals
 def main():
     cust_dtypes = {
@@ -270,33 +304,9 @@ def main():
 
     print_summary(builds)
 
-    all_packages = []
-    for pkg_list in builds["packages"]:
-        all_packages.extend(set(pkg_list))
-
-    print("## Most frequently selected packages")
-    pkg_counts = pandas.value_counts(all_packages)
-    for idx, (name, count) in enumerate(pkg_counts.iloc[:20].items()):
-        print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    print("---------------------------------")
-
-    print("## Image types")
-    type_counts = builds["image_type"].value_counts()
-    for idx, (name, count) in enumerate(type_counts.items()):
-        print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    print("---------------------------------")
-
-    print("## Biggest orgs")
-    org_counts = builds["org_id"].value_counts()
-    for idx, (org_id, count) in enumerate(org_counts.iloc[:20].items()):
-        name = org_id
-        user_idx = customers["org_id"] == org_id
-        if sum(user_idx) == 1:
-            name = customers["org_name"][user_idx].values.item()
-        elif sum(user_idx) > 1:
-            raise ValueError(f"Multiple ({sum(user_idx)}) entries with same org_id ({org_id}) in customer data")
-        print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    print("------------")
+    print_frequent_packages(builds)
+    print_image_type_counts(builds)
+    print_frequent_orgs(builds, customers)
 
     # find the last Monday before the start of the data
     first_mon = start
