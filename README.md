@@ -30,6 +30,8 @@ report.print_summary(builds)
 ...
 ```
 
+See also the [explore](./explore.ipynb) notebook in the root of the repo.
+
 ## Getting the data
 
 The data can be downloaded from the [Openshift Console output](https://console-openshift-console.apps.crcp01ue1.o9m8.p1.openshiftapps.com/k8s/ns/image-builder-prod/cronjobs) (under Workloads > Pods). Note that jobs run every Monday and the output is only available for 3 days. Ask @achilleas-k for convenient access to data dumps.
