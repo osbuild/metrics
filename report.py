@@ -180,16 +180,11 @@ def plot_user_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p
 
 
 def plot_image_types(builds: pandas.DataFrame):
-    image_types = builds.image_type.value_counts()
+    image_types = builds["image_type"].value_counts()
     plt.pie(image_types.values, labels=image_types.index)
 
 
-def plot_weekly_users(builds: pandas.DataFrame):
-    # find the last Monday before the start of the data
-    start = builds["created_at"].min()
-    while start.isoweekday() != 1:
-        start = start - timedelta(days=1)
-    first_mon = start
+def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime):
     last_date = builds["created_at"].max()
 
     users_so_far = set()
@@ -198,25 +193,26 @@ def plot_weekly_users(builds: pandas.DataFrame):
 
     start_dates = []
 
-    while start < last_date:
-        end = start + timedelta(days=7)  # one week
-        week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
+    p_start = start
+    while p_start < last_date:
+        end = p_start + timedelta(days=7)  # one week
+        week_idxs = (builds["created_at"] >= p_start) & (builds["created_at"] < end)
         week_users = set(builds["org_id"].loc[week_idxs])
 
         new_users = week_users - users_so_far
 
         n_week_users.append(len(week_users))
         n_new_users.append(len(new_users))
-        start_dates.append(start)
+        start_dates.append(p_start)
 
         users_so_far.update(week_users)
-        start = end
+        p_start = end
 
     ax = plt.axes()
     ax.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
     ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
     ax.legend(loc="best")
-    start_month = first_mon.replace(day=1)
+    start_month = start.replace(day=1)
     end_month = last_date.replace(month=last_date.month+1, day=1)
     xticks = []
     tick = start_month
@@ -302,6 +298,11 @@ def main():
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
     print("------------")
 
+    # find the last Monday before the start of the data
+    first_mon = start
+    while first_mon.isoweekday() != 1:
+        first_mon = first_mon - timedelta(days=1)
+
     # plot weekly counts
     p_days = 7  # 7 day period
 
@@ -309,14 +310,14 @@ def main():
 
     # builds counts
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_build_counts(builds, start, end, p_days)
+    plot_build_counts(builds, first_mon, end, p_days)
     imgname = img_basename + "-builds.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
 
     # user counts
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_user_counts(builds, start, end, p_days)
+    plot_user_counts(builds, first_mon, end, p_days)
     imgname = img_basename + "-users.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
@@ -329,7 +330,7 @@ def main():
     print(f"Saved figure {imgname}")
 
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_weekly_users(builds)
+    plot_weekly_users(builds, first_mon, end)
     imgname = img_basename + "-weekly_users.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
