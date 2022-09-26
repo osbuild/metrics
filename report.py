@@ -73,9 +73,11 @@ def print_weekly_users(builds: pandas.DataFrame, customers: pandas.DataFrame, st
 
 def plot_weekly_users(builds: pandas.DataFrame):
     # find the last Monday before the start of the data
+
     start = builds.created_at.min()
     while start.isoweekday() != 1:
         start = start - timedelta(days=1)
+    first_mon = start
     last_date = builds.created_at.max()
 
     users_so_far = set()
@@ -98,8 +100,23 @@ def plot_weekly_users(builds: pandas.DataFrame):
         users_so_far.update(week_users)
         start = end
 
-    plt.bar(start_dates, n_week_users)
-    plt.bar(start_dates, n_new_users)
+    plt.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
+    plt.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
+    plt.legend(loc="best")
+    start_month = first_mon.replace(day=1)
+    end_month = last_date.replace(month=last_date.month+1, day=1)
+    xticks = []
+    tick = start_month
+    while tick <= end_month:
+        xticks.append(tick)
+        month = tick.month
+        year = tick.year
+        if month + 1 > 12:
+            tick = tick.replace(year=year+1, month=1)
+        else:
+            tick = tick.replace(month=month+1)
+
+    plt.xticks(xticks)
 
 
 def builds_over_time(builds: pandas.DataFrame,
