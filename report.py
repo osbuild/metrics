@@ -71,6 +71,37 @@ def print_weekly_users(builds: pandas.DataFrame, customers: pandas.DataFrame, st
     print(f"Number of new users for week of {start_str}: {len(new_users)}")
 
 
+def plot_weekly_users(builds: pandas.DataFrame):
+    # find the last Monday before the start of the data
+    start = builds.created_at.min()
+    while start.isoweekday() != 1:
+        start = start - timedelta(days=1)
+    last_date = builds.created_at.max()
+
+    users_so_far = set()
+    n_week_users = []
+    n_new_users = []
+
+    start_dates = []
+
+    while start < last_date:
+        end = start + timedelta(days=7)  # one week
+        week_idxs = (builds.created_at >= start) & (builds.created_at < end)
+        week_users = set(builds.org_id.loc[week_idxs])
+
+        new_users = week_users - users_so_far
+
+        n_week_users.append(len(week_users))
+        n_new_users.append(len(new_users))
+        start_dates.append(start)
+
+        users_so_far.update(week_users)
+        start = end
+
+    plt.bar(start_dates, n_week_users)
+    plt.bar(start_dates, n_new_users)
+
+
 def builds_over_time(builds: pandas.DataFrame,
                      start: datetime, end: datetime, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
     t_start = start
