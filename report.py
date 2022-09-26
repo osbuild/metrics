@@ -100,9 +100,10 @@ def plot_weekly_users(builds: pandas.DataFrame):
         users_so_far.update(week_users)
         start = end
 
-    plt.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
-    plt.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
-    plt.legend(loc="best")
+    axes = plt.axes()
+    axes.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
+    axes.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
+    axes.legend(loc="best")
     start_month = first_mon.replace(day=1)
     end_month = last_date.replace(month=last_date.month+1, day=1)
     xticks = []
@@ -116,7 +117,13 @@ def plot_weekly_users(builds: pandas.DataFrame):
         else:
             tick = tick.replace(month=month+1)
 
-    plt.xticks(xticks)
+    axes.set_xticks(xticks)
+    axes.grid(True)
+    axes.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+
+    # rotate xtick labels 45 degrees cw for readability
+    for label in axes.get_xticklabels():
+        label.set_rotation(45)
 
 
 def builds_over_time(builds: pandas.DataFrame,
