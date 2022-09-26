@@ -142,36 +142,41 @@ def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime):
 
 def plot_build_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
     t_starts, build_counts = builds_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
-    plt.plot(t_starts, build_counts, ".b", markersize=12, label="n builds")
-    plt.xticks(t_starts)
+    ax = plt.axes()
+    ax.plot(t_starts, build_counts, ".b", markersize=12, label="n builds")
 
     builds_trend = moving_average(build_counts)
-    plt.plot(t_starts, builds_trend, "-b", label="builds mov. avg.")
+    ax.plot(t_starts, builds_trend, "-b", label="builds mov. avg.")
 
-    # now = datetime.now()
-    # nowline = [now, now]
-    # plt.plot(nowline, [0, np.max(build_counts)], linestyle="--", color="black", label="now")
+    ax.set_xticks(t_starts)
+    # rotate xtick labels 45 degrees cw for readability
+    for label in ax.get_xticklabels():
+        label.set_rotation(45)
 
-    plt.grid()
-    plt.axis(ymin=0, xmin=start)
-    plt.xlabel("dates")
-    plt.ylabel("number of builds")
-    plt.legend(loc="best")
+    ax.axis(ymin=0, xmin=start)
+    ax.set_xlabel("dates")
+    ax.legend(loc="best")
+    ax.grid(True)
 
 
 def plot_user_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
     t_starts, user_counts = users_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
-    plt.plot(t_starts, user_counts, ".g", markersize=12, label="n users")
-    plt.xticks(t_starts)
+    ax = plt.axes()
+    ax.plot(t_starts, user_counts, ".g", markersize=12, label="n users")
 
     user_trend = moving_average(user_counts)
-    plt.plot(t_starts, user_trend, "-g", label="users mov. avg.")
+    ax.plot(t_starts, user_trend, "-g", label="users mov. avg.")
 
-    # plt.grid()
-    plt.axis(ymin=0, xmin=start)
-    plt.xlabel(f"beginning of {p_days} day period")
-    plt.ylabel("")
-    plt.legend(loc="best")
+    ax.set_xticks(t_starts)
+    # rotate xtick labels 45 degrees cw for readability
+    for label in ax.get_xticklabels():
+        label.set_rotation(45)
+
+    ax.axis(ymin=0, xmin=start)
+    ax.set_xlabel(f"beginning of {p_days} day period")
+    ax.set_ylabel("")
+    ax.legend(loc="best")
+    ax.grid(True)
 
 
 def plot_image_types(builds: pandas.DataFrame):
