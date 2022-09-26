@@ -1,8 +1,8 @@
+import argparse
 import os
-import sys
 
 from datetime import datetime, timedelta
-from typing import Tuple
+from typing import List, Set, Tuple
 
 import pandas
 import numpy as np
@@ -14,22 +14,22 @@ import scipy.signal as sp
 from ibmetrics import reader
 
 
-def filter_users(builds: pandas.DataFrame, customers: pandas.DataFrame) -> pandas.DataFrame:
+def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: List[str]) -> pandas.DataFrame:
+
+    if not len(users) or not len(patterns):
+        # no filtering possible
+        return builds
 
     def get_ids(value: str) -> pandas.Series:
-        matching_idxs = customers["org_name"].str.match(value, case=False)
-        return customers["org_id"].loc[matching_idxs]
-
-    with open("./userfilter.txt", encoding="utf-8") as filterfile:
-        patterns = filterfile.read().split("\n")
+        matching_idxs = users["name"].str.match(value, case=False)
+        return users["accountNumber"].loc[matching_idxs].astype(str)
 
     for pattern in patterns:
         if not pattern:
-            # don't filter empty patterns
             continue
-        # rm_ids = pandas.concat([rm_ids, get_ids(pattern)], ignore_index=True)
+
         for rm_id in get_ids(pattern):
-            builds = builds.loc[builds["org_id"] != rm_id]
+            builds = builds.loc[builds["account_number"] != rm_id]
 
     return builds
 
@@ -59,7 +59,7 @@ def print_summary(builds):
     print(f"- Builds with custom repos: {n_with_repos}")
 
 
-def print_weekly_users(builds: pandas.DataFrame, customers: pandas.DataFrame, start: datetime):
+def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame, start: datetime):
     end = start + timedelta(days=7)  # one week
     week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
     week_users = set(builds["org_id"].loc[week_idxs])
@@ -256,48 +256,87 @@ def print_image_type_counts(builds):
     print("---------------------------------")
 
 
-def print_frequent_orgs(builds: pandas.DataFrame, customers: pandas.DataFrame, limit=20):
+def print_frequent_orgs(builds: pandas.DataFrame, users: pandas.DataFrame, limit=20):
+
     print("## Biggest orgs")
-    org_counts = builds["org_id"].value_counts()
-    for idx, (org_id, count) in enumerate(org_counts.iloc[:limit].items()):
-        name = org_id
-        user_idx = customers["org_id"] == org_id
-        if sum(user_idx) == 1:
-            name = customers["org_name"][user_idx].values.item()
-        elif sum(user_idx) > 1:
-            raise ValueError(f"Multiple ({sum(user_idx)}) entries with same org_id ({org_id}) in customer data")
+    org_counts = builds["account_number"].value_counts()
+    for idx, (acc_num, count) in enumerate(org_counts.iloc[:limit].items()):
+        name = acc_num
+        if len(users):
+            user_idx = users["accountNumber"].astype(str) == acc_num
+            if sum(user_idx) == 1:
+                name = users["name"][user_idx].values.item()
+            elif sum(user_idx) > 1:
+                raise ValueError(f"Multiple ({sum(user_idx)}) entries with same "
+                                 "account_number ({acc_num}) in user data")
         print(f"{idx+1:3d}. {name:40s} {count:5d}")
     print("------------")
 
 
+def get_repeat_orgs(builds: pandas.DataFrame, min_builds: int, period: timedelta) -> Set[str]:
+    """
+    Return a list of org_ids that have built at least 'min_builds' in a period of 'period'.
+    """
+    orgs = builds["org_id"].unique()
+
+    active_orgs = set()
+
+    pd_period = pandas.Timedelta(period)  # convert for compatibility with numpy types
+
+    for org in orgs:
+        org_build_idxs = builds["org_id"] == org
+        org_build_dates = builds["created_at"].loc[org_build_idxs]
+        periods = np.diff(org_build_dates.sort_values())
+
+        # if a sum of min_builds-1 periods is less than period, then the org is identified as a repeat/active org
+        for p_idx, _ in enumerate(periods):
+            p_sum = np.sum(periods[p_idx:p_idx+min_builds-1])
+
+            if p_sum < pd_period:
+                active_orgs.add(org)
+
+    return active_orgs
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generate report from Image Builder usage data")
+    parser.add_argument("data", help="File containing data dump")
+    parser.add_argument("--start", default=None, help="Start date to use (older data are ignored)")
+    parser.add_argument("--end", default=None, help="End date to use (newer data are ignored)")
+    parser.add_argument("--userinfo", default=None, help="File containing user info (json)")
+    parser.add_argument("--userfilter", default=None, help="File containing user names to remove from data")
+
+    args = parser.parse_args()
+    return args
+
+
 # pylint: disable=too-many-statements,too-many-locals
 def main():
-    cust_dtypes = {
-        "org_id": str,
-        "org_name": str,
-        "strategic": str,
-    }
-    customers = pandas.read_csv("Customers.csv", delimiter=",",
-                                header=0, names=["org_id", "org_name", "strategic"], dtype=cust_dtypes)
+    args = parse_args()
+    data_fname = args.data
 
-    # TODO: proper argument handling
-    fname = sys.argv[1]
-
-    builds = read_file(fname)
+    builds = read_file(data_fname)
     print(f"Imported {len(builds)} records")
 
-    builds = filter_users(builds, customers)
+    users = None
+    if args.userinfo:
+        users = pandas.read_json(args.userinfo)
+
+    user_filter = []
+    if args.userfilter:
+        with open(args.userfilter, encoding="utf-8") as filterfile:
+            user_filter = filterfile.read().split("\n")
+
+    builds = filter_users(builds, users, user_filter)
     print(f"{len(builds)} records after user filtering")
 
-    if len(sys.argv) > 2:
-        start_str = sys.argv[2]
-        start = datetime.fromisoformat(start_str)
+    if args.start:
+        start = datetime.fromisoformat(args.start)
     else:
         start = builds["created_at"].min()
 
-    if len(sys.argv) > 3:
-        end_str = sys.argv[3]
-        end = datetime.fromisoformat(end_str)
+    if args.end:
+        end = datetime.fromisoformat(args.end)
     else:
         end = builds["created_at"].max()
 
@@ -308,7 +347,7 @@ def main():
 
     print_frequent_packages(builds)
     print_image_type_counts(builds)
-    print_frequent_orgs(builds, customers)
+    print_frequent_orgs(builds, users)
 
     # find the last Monday before the start of the data
     first_mon = start
@@ -318,7 +357,7 @@ def main():
     # plot weekly counts
     p_days = 7  # 7 day period
 
-    img_basename = os.path.splitext(os.path.basename(fname))[0]
+    img_basename = os.path.splitext(os.path.basename(data_fname))[0]
 
     # builds counts
     plt.figure(figsize=(16, 9), dpi=100)
