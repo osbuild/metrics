@@ -34,29 +34,30 @@ def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: Li
     return builds
 
 
-def print_summary(builds):
-    print("Summary")
-    print("=======\n")
+def get_summary(builds):
+    out = ["Summary"]
+    out += ["=======\n"]
     start = builds["created_at"].min()
     end = builds["created_at"].max()
-    print(f"Period: {start} - {end}\n")
+    out += [f"Period: {start} - {end}\n"]
 
-    print(f"- Total builds: {len(builds)}")
-    print(f"- Number of users: {len(builds['org_id'].unique())}")
+    out += [f"- Total builds: {len(builds)}"]
+    out += [f"- Number of users: {len(builds['org_id'].unique())}"]
 
     n_with_packages = sum(1 if len(pkg) else 0 for pkg in builds["packages"])
-    print(f"- Builds with packages: {n_with_packages}")
+    out += [f"- Builds with packages: {n_with_packages}"]
 
     avg_packages = np.mean([len(pkg) for pkg in builds["packages"]])
-    print(f"- Average number of packages per build: {avg_packages:.2f}")
+    out += [f"- Average number of packages per build: {avg_packages:.2f}"]
     avg_packages_nonempty = np.mean([len(pkg) for pkg in builds["packages"] if len(pkg)])
-    print(f"- Average number of packages per build (excluding empty): {avg_packages_nonempty:.2f}")
+    out += [f"- Average number of packages per build (excluding empty): {avg_packages_nonempty:.2f}"]
 
     n_with_fs = sum(1 if len(fs) else 0 for fs in builds["filesystem"])
-    print(f"- Builds with filesystem customizations: {n_with_fs}")
+    out += [f"- Builds with filesystem customizations: {n_with_fs}"]
 
     n_with_repos = sum(1 if len(repos) else 0 for repos in builds["payload_repositories"])
-    print(f"- Builds with custom repos: {n_with_repos}")
+    out += [f"- Builds with custom repos: {n_with_repos}"]
+    return "\n".join(out)
 
 
 def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame, start: datetime):
@@ -347,7 +348,7 @@ def main():
     builds = slice_time(builds, start, end)
     print(f"{len(builds)} between {start} and {end}")
 
-    print_summary(builds)
+    print(get_summary(builds))
 
     print_frequent_packages(builds)
     print_image_type_counts(builds)
