@@ -2,7 +2,7 @@ import argparse
 import os
 
 from datetime import datetime, timedelta
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Optional
 
 import pandas
 import numpy as np
@@ -186,7 +186,8 @@ def plot_image_types(builds: pandas.DataFrame):
     plt.pie(image_types.values, labels=image_types.index)
 
 
-def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime):
+def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime,
+                      ax: Optional[plt.Axes]):
     last_date = builds["created_at"].max()
 
     users_so_far = set()
@@ -210,8 +211,11 @@ def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime):
         users_so_far.update(week_users)
         p_start = end
 
-    ax = plt.axes()
-    ax.bar(start_dates, n_week_users, width=2, color="blue", label="n users")
+    if not ax:
+        ax = plt.axes()
+
+    bar_shift = timedelta(days=1)
+    ax.bar(np.array(start_dates)+bar_shift, n_week_users, width=2, color="blue", label="n users")
     ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
     ax.legend(loc="best")
     start_month = start.replace(day=1)
