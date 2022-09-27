@@ -303,6 +303,34 @@ def get_repeat_orgs(builds: pandas.DataFrame, min_builds: int, period: timedelta
     return active_orgs
 
 
+def get_org_build_days(builds: pandas.DataFrame) -> pandas.DataFrame:
+    """
+    Org IDs associated with the dates where they had at least one build.
+    """
+    build_days: List[Dict[str, Any]] = []
+    for org_id in builds["org_id"].unique():
+        org_builds = builds.loc[builds["org_id"] == org_id]
+        dates = np.unique(org_builds["created_at"].values.astype("datetime64[D]"))  # round to day
+        build_days.append({"org_id": org_id, "build_dates": dates})
+
+    return pandas.DataFrame.from_dict(build_days)
+
+
+def get_active_orgs(builds: pandas.DataFrame, min_days: int, recent_limit: int) -> pandas.Series:
+    """
+    Returns a Series of org_ids for orgs that have builds on at least min_days separate days and the most recent one was
+    after recent_limit days ago.
+    """
+    build_days = get_org_build_days(builds)
+    counts = build_days["build_dates"].apply(len)
+    build_days = build_days.loc[counts >= min_days]
+    cutoff = datetime.now() - timedelta(days=recent_limit)
+    most_recent_dates = build_days["build_dates"].apply(max)
+    recent_idxs = most_recent_dates > cutoff
+    recent_orgs = build_days["org_id"].loc[recent_idxs]
+    return recent_orgs
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate report from Image Builder usage data")
     parser.add_argument("data", help="File containing data dump")
