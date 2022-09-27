@@ -187,7 +187,7 @@ def plot_image_types(builds: pandas.DataFrame):
 
 
 def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime,
-                      ax: Optional[plt.Axes]):
+                      ax: Optional[plt.Axes] = None):
     last_date = builds["created_at"].max()
 
     users_so_far = set()
