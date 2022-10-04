@@ -8,29 +8,32 @@ The `ibmetrics/reader` module can parse the output from an weekly SQL query agai
 
 You can load the data from a log into a [Pandas](https://pandas.pydata.org/) DataFrame with:
 ```python
-import reader
+import ibmetrics as ib
 
-builds = reader.read_dump(fname)
+builds = ib.reader.read_dump(fname)
 ```
 
-The `report.read_file()` method adds caching on top of this for speed, since the log file parsing can take a few seconds. On first read of a data dump, it saves the data as a Python pickle in `${XDG_CACHE_HOME}/osbuild-metrics/` using the basename of the input file. Future loads of the same file load the pickle (no cache freshness checks are made; it is assumed that the log file from the data dump never changes).
+The `ib.report.read_file()` method adds caching on top of this for speed, since the log file parsing can take a few seconds. On first read of a data dump, it saves the data as a Python pickle in `${XDG_CACHE_HOME}/osbuild-metrics/` using the basename of the input file. Future loads of the same file load the pickle (no cache freshness checks are made; it is assumed that the log file from the data dump never changes).
 
 Running `report.py` against a log file will produce some stats and figures. The `main()` function in this file can be used as a playground to explore the data.
 Alternatively, you can load the data and the `report` module in an interactive environment and explore it there:
 ```python
-import report
 import pandas
+
+import report
+import ibmetrics as ib
 
 builds = report.read_file("./data/dump-2022-09-26.log")
 users = pandas.read_json("./data/userinfo.json")  # maps account numbers to account names and other info
 
 print(f"Read {len(builds)} records")
 
-report.print_summary(builds)
+summary = ib.metrics.make_summary(builds)
+ib.metrics.summarise(summary)
 ...
 ```
 
-See also the [explore](./explore.ipynb) notebook in the root of the repo.
+See also the [explore](./notebooks/explore.ipynb) notebook.
 
 ## Getting the data
 
