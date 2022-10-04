@@ -2,7 +2,7 @@ import argparse
 import os
 
 from datetime import datetime, timedelta
-from typing import List, Set, Tuple, Optional
+from typing import List, Set, Tuple, Optional, Dict, Any
 
 import pandas
 import numpy as np
@@ -41,20 +41,6 @@ def builds_over_time(builds: pandas.DataFrame,
         t_start += period
 
     return np.array(bin_starts), np.array(n_builds)
-
-
-def users_over_time(builds: pandas.DataFrame,
-                    start: datetime, end: datetime, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
-    t_start = start
-    bin_starts = []
-    n_users = []
-    while t_start+period < end:
-        idxs = (builds["created_at"] >= t_start) & (builds["created_at"] < t_start+period)
-        n_users.append(len(set(builds["org_id"].loc[idxs])))
-        bin_starts.append(t_start)
-        t_start += period
-
-    return np.array(bin_starts), np.array(n_users)
 
 
 def read_file(fname: os.PathLike) -> pandas.DataFrame:
@@ -111,24 +97,19 @@ def plot_build_counts(builds: pandas.DataFrame, start: datetime, end: datetime, 
     ax.grid(True)
 
 
-def plot_user_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
-    t_starts, user_counts = users_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
-    ax = plt.axes()
-    ax.plot(t_starts, user_counts, ".g", markersize=12, label="n users")
+def plot_montly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    if not ax:
+        ax = plt.axes()
 
-    user_trend = moving_average(user_counts)
-    ax.plot(t_starts, user_trend, "-g", label="users mov. avg.")
+    mau, months = metrics.get_monthly_users(builds)
+    ax.bar(months, mau, width=20, zorder=2)
+    for mo, nu in zip(months, mau):
+        plt.text(mo, nu, str(nu), size=16, ha="center")
 
-    ax.set_xticks(t_starts)
-    # rotate xtick labels 45 degrees cw for readability
-    for label in ax.get_xticklabels():
-        label.set_rotation(45)
-
-    ax.axis(ymin=0, xmin=start)
-    ax.set_xlabel(f"beginning of {p_days} day period")
-    ax.set_ylabel("")
-    ax.legend(loc="best")
+    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
+    ax.set_xticks(months, xlabels, rotation=45, ha="right")
     ax.grid(True)
+    ax.set_title("Monthly users")
 
 
 def plot_image_types(builds: pandas.DataFrame):
@@ -349,7 +330,7 @@ def main():
 
     # user counts
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_user_counts(builds, first_mon, end, p_days)
+    plot_montly_users(builds)
     imgname = img_basename + "-users.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")

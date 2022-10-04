@@ -3,7 +3,9 @@ Functions for calculating metrics based on the build data.
 """
 import pandas
 
-from typing import Any, Dict
+import numpy as np
+
+from typing import Any, Dict, Tuple
 
 
 def summarise(summary: Dict[str, Any]) -> str:
@@ -48,3 +50,31 @@ def get_summary(builds: pandas.DataFrame) -> Dict[str, Any]:
     }
 
     return summary
+
+
+def get_monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the number of unique users that appear in the data for each calendar month within the date ranges found in
+    the build data.
+    The second return value is an array of the start dates of each month corresponding to the counts in the first value.
+    """
+
+    month_offset = pandas.DateOffset(months=1)
+
+    t_start = builds["created_at"].min()
+    m_start = pandas.Timestamp(year=t_start.year, month=t_start.month, day=1)  # start of month of first data point
+
+    t_end = builds["created_at"].max()
+    # start of month following last data point
+    m_end = pandas.Timestamp(year=t_end.year, month=t_end.month, day=1) + pandas.DateOffset(months=1)
+
+    month_starts = []
+    n_users = []
+    m_current = m_start
+    while m_current < m_end:
+        idxs = (builds["created_at"] >= m_current) & (builds["created_at"] < m_current+month_offset)
+        n_users.append(builds["org_id"].loc[idxs].nunique())
+        month_starts.append(m_current)
+        m_current += month_offset
+
+    return np.array(n_users), np.array(month_starts)
