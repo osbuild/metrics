@@ -81,6 +81,24 @@ def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     ax.set_title("Monthly builds")
 
 
+def monthly_new_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Bar graph of the number of new users that appear in each calendar month.
+    """
+    if not ax:
+        ax = plt.axes()
+
+    user_counts, months = metrics.monthly_new_users(builds)
+    ax.bar(months, user_counts, width=20, zorder=2)
+    for mo, nu in zip(months, user_counts):
+        plt.text(mo, nu, str(nu), size=16, ha="center")
+
+    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
+    ax.set_xticks(months, xlabels, rotation=45, ha="right")
+    ax.grid(True)
+    ax.set_title("Monthly new users")
+
+
 def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     """
     Pie chart of the distribution of image types built.

@@ -97,6 +97,22 @@ def monthly_builds(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     return monthly_value(builds, "job_id")
 
 
+def monthly_new_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the number of new users that appear each calendar month within the date ranges found in the build data.
+    The second return value is an array of the start dates of each month corresponding to the counts in the first value.
+    """
+    # get the first build date for each org_id, then calculate monthly_users from that data only
+    first_builds: List[Dict[str, Any]] = []
+    for org_id in builds["org_id"].unique():
+        org_builds = builds.loc[builds["org_id"] == org_id]
+        first_date = org_builds["created_at"].min()
+        first_builds.append({"org_id": org_id, "created_at": first_date})
+
+    df = pandas.DataFrame.from_dict(first_builds)
+    return monthly_users(df)
+
+
 def builds_over_time(builds: pandas.DataFrame, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
     t_start = builds["created_at"].min()
     t_end = builds["created_at"].max()
