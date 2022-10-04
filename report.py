@@ -1,47 +1,13 @@
 import argparse
 import os
 
-from datetime import datetime, timedelta
-from typing import List, Set, Tuple, Optional, Dict, Any
-
 import pandas
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import scipy.signal as sp
 
+from datetime import datetime
 
-from ibmetrics import data, metrics, reader
-
-
-def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame):
-    start = builds["created_at"].min()
-    end = start + timedelta(days=7)  # one week
-    week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
-    week_users = set(builds["org_id"].loc[week_idxs])
-
-    pre_week_idxs = (builds["created_at"] < start)
-    pre_users = set(builds["org_id"].loc[pre_week_idxs])  # users seen before start day
-
-    start_str = start.strftime("%A, %d %B %Y")
-    print(f"Number of unique users for week of {start_str}: {len(week_users)}")
-
-    new_users = week_users - pre_users
-    print(f"Number of new users for week of {start_str}: {len(new_users)}")
-
-
-def builds_over_time(builds: pandas.DataFrame, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
-    t_start = builds["created_at"].min()
-    t_end = builds["created_at"].max()
-    bin_starts = []
-    n_builds = []
-    while t_start+period < t_end:
-        idxs = (builds["created_at"] >= t_start) & (builds["created_at"] < t_start+period)
-        n_builds.append(sum(idxs))
-        bin_starts.append(t_start)
-        t_start += period
-
-    return np.array(bin_starts), np.array(n_builds)
+import ibmetrics as ib
 
 
 def read_file(fname: os.PathLike) -> pandas.DataFrame:
@@ -54,7 +20,7 @@ def read_file(fname: os.PathLike) -> pandas.DataFrame:
         # TODO: handle exceptions
         return pandas.read_pickle(cache_fname)
 
-    builds = reader.read_dump(fname)
+    builds = ib.reader.read_dump(fname)
     print(f"Saving cached pickle file at {cache_fname}")
     builds.to_pickle(cache_fname)
     return builds
@@ -71,193 +37,6 @@ def trendline(values):
     tline = sp.convolve(values, kernel, mode="same")
     tline = tline[:-half]
     return tline.tolist()
-
-
-def moving_average(values):
-    sums = np.cumsum(values)
-    weights = np.arange(1, len(sums)+1, 1)
-    return sums / weights
-
-
-def plot_build_counts(builds: pandas.DataFrame, p_days: int):
-    t_starts, build_counts = builds_over_time(builds, period=timedelta(days=p_days))
-    ax = plt.axes()
-    ax.plot(t_starts, build_counts, ".b", markersize=12, label="n builds")
-
-    builds_trend = moving_average(build_counts)
-    ax.plot(t_starts, builds_trend, "-b", label="builds mov. avg.")
-
-    ax.set_xticks(t_starts)
-    # rotate xtick labels 45 degrees cw for readability
-    for label in ax.get_xticklabels():
-        label.set_rotation(45)
-
-    ax.set_xlabel("dates")
-    ax.legend(loc="best")
-    ax.grid(True)
-
-
-def plot_montly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
-    if not ax:
-        ax = plt.axes()
-
-    mau, months = metrics.get_monthly_users(builds)
-    ax.bar(months, mau, width=20, zorder=2)
-    for mo, nu in zip(months, mau):
-        plt.text(mo, nu, str(nu), size=16, ha="center")
-
-    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
-    ax.set_xticks(months, xlabels, rotation=45, ha="right")
-    ax.grid(True)
-    ax.set_title("Monthly users")
-
-
-def plot_image_types(builds: pandas.DataFrame):
-    image_types = builds["image_type"].value_counts()
-    plt.pie(image_types.values, labels=image_types.index)
-
-
-def plot_weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
-    p_start = builds["created_at"].min()
-    last_date = builds["created_at"].max()
-
-    users_so_far = set()
-    n_week_users = []
-    n_new_users = []
-
-    start_dates = []
-
-    while p_start < last_date:
-        end = p_start + timedelta(days=7)  # one week
-        week_idxs = (builds["created_at"] >= p_start) & (builds["created_at"] < end)
-        week_users = set(builds["org_id"].loc[week_idxs])
-
-        new_users = week_users - users_so_far
-
-        n_week_users.append(len(week_users))
-        n_new_users.append(len(new_users))
-        start_dates.append(p_start)
-
-        users_so_far.update(week_users)
-        p_start = end
-
-    if not ax:
-        ax = plt.axes()
-
-    bar_shift = timedelta(days=1)
-    ax.bar(np.array(start_dates)+bar_shift, n_week_users, width=2, color="blue", label="n users")
-    ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
-    ax.legend(loc="best")
-    start_month = p_start.replace(day=1)
-    end_month = last_date.replace(month=last_date.month+1, day=1)
-    xticks = []
-    tick = start_month
-    while tick <= end_month:
-        xticks.append(tick)
-        month = tick.month
-        year = tick.year
-        if month + 1 > 12:
-            tick = tick.replace(year=year+1, month=1)
-        else:
-            tick = tick.replace(month=month+1)
-
-    ax.set_xticks(xticks)
-    ax.grid(True)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-
-    # rotate xtick labels 45 degrees cw for readability
-    for label in ax.get_xticklabels():
-        label.set_rotation(45)
-
-
-def print_frequent_packages(builds: pandas.DataFrame, limit=20):
-    all_packages = []
-    for pkg_list in builds["packages"]:
-        all_packages.extend(set(pkg_list))
-
-    print("## Most frequently selected packages")
-    pkg_counts = pandas.value_counts(all_packages)
-    for idx, (name, count) in enumerate(pkg_counts.iloc[:limit].items()):
-        print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    print("---------------------------------")
-
-
-def print_image_type_counts(builds):
-    print("## Image types")
-    type_counts = builds["image_type"].value_counts()
-    for idx, (name, count) in enumerate(type_counts.items()):
-        print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    print("---------------------------------")
-
-
-def print_frequent_orgs(builds: pandas.DataFrame, users: Optional[pandas.DataFrame] = None, limit=20):
-
-    print("## Biggest orgs")
-    org_counts = builds["account_number"].value_counts()
-    for idx, (acc_num, count) in enumerate(org_counts.iloc[:limit].items()):
-        name = acc_num
-        if users is not None:
-            user_idx = users["accountNumber"].astype(str) == acc_num
-            if sum(user_idx) == 1:
-                name = users["name"][user_idx].values.item()
-            elif sum(user_idx) > 1:
-                raise ValueError(f"Multiple ({sum(user_idx)}) entries with same "
-                                 "account_number ({acc_num}) in user data")
-        print(f"{idx+1:3d}. {name:40s} {count:5d}")
-    print("------------")
-
-
-def get_repeat_orgs(builds: pandas.DataFrame, min_builds: int, period: timedelta) -> Set[str]:
-    """
-    Return a list of org_ids that have built at least 'min_builds' in a period of 'period'.
-    """
-    orgs = builds["org_id"].unique()
-
-    active_orgs = set()
-
-    pd_period = pandas.Timedelta(period)  # convert for compatibility with numpy types
-
-    for org in orgs:
-        org_build_idxs = builds["org_id"] == org
-        org_build_dates = builds["created_at"].loc[org_build_idxs]
-        periods = np.diff(org_build_dates.sort_values())
-
-        # if a sum of min_builds-1 periods is less than period, then the org is identified as a repeat/active org
-        for p_idx, _ in enumerate(periods):
-            p_sum = np.sum(periods[p_idx:p_idx+min_builds-1])
-
-            if p_sum < pd_period:
-                active_orgs.add(org)
-
-    return active_orgs
-
-
-def get_org_build_days(builds: pandas.DataFrame) -> pandas.DataFrame:
-    """
-    Org IDs associated with the dates where they had at least one build.
-    """
-    build_days: List[Dict[str, Any]] = []
-    for org_id in builds["org_id"].unique():
-        org_builds = builds.loc[builds["org_id"] == org_id]
-        dates = np.unique(org_builds["created_at"].values.astype("datetime64[D]"))  # round to day
-        build_days.append({"org_id": org_id, "build_dates": dates})
-
-    return pandas.DataFrame.from_dict(build_days)
-
-
-def get_active_orgs(builds: pandas.DataFrame, min_days: int, recent_limit: int) -> pandas.Series:
-    """
-    Returns a Series of org_ids for orgs that have builds on at least min_days separate days and the most recent one was
-    after recent_limit days ago.
-    """
-    build_days = get_org_build_days(builds)
-    counts = build_days["build_dates"].apply(len)
-    build_days = build_days.loc[counts >= min_days]
-    cutoff = datetime.now() - timedelta(days=recent_limit)
-    most_recent_dates = build_days["build_dates"].apply(max)
-    recent_idxs = most_recent_dates > cutoff
-    recent_orgs = build_days["org_id"].loc[recent_idxs]
-    return recent_orgs
 
 
 def parse_args():
@@ -289,7 +68,7 @@ def main():
         with open(args.userfilter, encoding="utf-8") as filterfile:
             user_filter = filterfile.read().split("\n")
 
-    builds = data.filter_users(builds, users, user_filter)
+    builds = ib.data.filter_users(builds, users, user_filter)
     print(f"{len(builds)} records after user filtering")
 
     if args.start:
@@ -302,13 +81,9 @@ def main():
     else:
         end = builds["created_at"].max()
 
-    builds = data.slice_time(builds, start, end)
+    builds = ib.data.slice_time(builds, start, end)
 
-    print(metrics.summarise(metrics.get_summary(builds)))
-
-    print_frequent_packages(builds)
-    print_image_type_counts(builds)
-    print_frequent_orgs(builds, users)
+    print(ib.metrics.summarise(ib.metrics.make_summary(builds)))
 
     # plot weekly counts
     p_days = 7  # 7 day period
@@ -317,27 +92,27 @@ def main():
 
     # builds counts
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_build_counts(builds, p_days)
+    ib.plot.build_counts(builds, p_days)
     imgname = img_basename + "-builds.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
 
     # user counts
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_montly_users(builds)
+    ib.plot.monthly_users(builds)
     imgname = img_basename + "-users.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
 
     # image type breakdown
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_image_types(builds)
+    ib.plot.image_types(builds)
     imgname = img_basename + "-image_types.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
 
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_weekly_users(builds)
+    ib.plot.weekly_users(builds)
     imgname = img_basename + "-weekly_users.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
