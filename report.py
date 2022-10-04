@@ -14,7 +14,8 @@ import scipy.signal as sp
 from ibmetrics import data, metrics, reader
 
 
-def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame, start: datetime):
+def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame):
+    start = builds["created_at"].min()
     end = start + timedelta(days=7)  # one week
     week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
     week_users = set(builds["org_id"].loc[week_idxs])
@@ -29,12 +30,12 @@ def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame, start:
     print(f"Number of new users for week of {start_str}: {len(new_users)}")
 
 
-def builds_over_time(builds: pandas.DataFrame,
-                     start: datetime, end: datetime, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
-    t_start = start
+def builds_over_time(builds: pandas.DataFrame, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
+    t_start = builds["created_at"].min()
+    t_end = builds["created_at"].max()
     bin_starts = []
     n_builds = []
-    while t_start+period < end:
+    while t_start+period < t_end:
         idxs = (builds["created_at"] >= t_start) & (builds["created_at"] < t_start+period)
         n_builds.append(sum(idxs))
         bin_starts.append(t_start)
@@ -78,8 +79,8 @@ def moving_average(values):
     return sums / weights
 
 
-def plot_build_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
-    t_starts, build_counts = builds_over_time(builds, start=start, end=end, period=timedelta(days=p_days))
+def plot_build_counts(builds: pandas.DataFrame, p_days: int):
+    t_starts, build_counts = builds_over_time(builds, period=timedelta(days=p_days))
     ax = plt.axes()
     ax.plot(t_starts, build_counts, ".b", markersize=12, label="n builds")
 
@@ -91,7 +92,6 @@ def plot_build_counts(builds: pandas.DataFrame, start: datetime, end: datetime, 
     for label in ax.get_xticklabels():
         label.set_rotation(45)
 
-    ax.axis(ymin=0, xmin=start)
     ax.set_xlabel("dates")
     ax.legend(loc="best")
     ax.grid(True)
@@ -117,8 +117,8 @@ def plot_image_types(builds: pandas.DataFrame):
     plt.pie(image_types.values, labels=image_types.index)
 
 
-def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime,
-                      ax: Optional[plt.Axes] = None):
+def plot_weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    p_start = builds["created_at"].min()
     last_date = builds["created_at"].max()
 
     users_so_far = set()
@@ -127,7 +127,6 @@ def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime,
 
     start_dates = []
 
-    p_start = start
     while p_start < last_date:
         end = p_start + timedelta(days=7)  # one week
         week_idxs = (builds["created_at"] >= p_start) & (builds["created_at"] < end)
@@ -149,7 +148,7 @@ def plot_weekly_users(builds: pandas.DataFrame, start: datetime, end: datetime,
     ax.bar(np.array(start_dates)+bar_shift, n_week_users, width=2, color="blue", label="n users")
     ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
     ax.legend(loc="best")
-    start_month = start.replace(day=1)
+    start_month = p_start.replace(day=1)
     end_month = last_date.replace(month=last_date.month+1, day=1)
     xticks = []
     tick = start_month
@@ -311,11 +310,6 @@ def main():
     print_image_type_counts(builds)
     print_frequent_orgs(builds, users)
 
-    # find the last Monday before the start of the data
-    first_mon = start
-    while first_mon.isoweekday() != 1:
-        first_mon = first_mon - timedelta(days=1)
-
     # plot weekly counts
     p_days = 7  # 7 day period
 
@@ -323,7 +317,7 @@ def main():
 
     # builds counts
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_build_counts(builds, first_mon, end, p_days)
+    plot_build_counts(builds, p_days)
     imgname = img_basename + "-builds.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
@@ -343,7 +337,7 @@ def main():
     print(f"Saved figure {imgname}")
 
     plt.figure(figsize=(16, 9), dpi=100)
-    plot_weekly_users(builds, first_mon, end)
+    plot_weekly_users(builds)
     imgname = img_basename + "-weekly_users.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")
