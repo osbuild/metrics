@@ -53,13 +53,12 @@ def make_summary(builds: pandas.DataFrame) -> Dict[str, Any]:
     return summary
 
 
-def monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+def monthly_value(builds: pandas.DataFrame, column: str) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Returns the number of unique users that appear in the data for each calendar month within the date ranges found in
-    the build data.
+    Returns the number of unique values for the given column that appear in the data for each calendar month within the
+    date ranges found in the build data.
     The second return value is an array of the start dates of each month corresponding to the counts in the first value.
     """
-
     month_offset = pandas.DateOffset(months=1)
 
     t_start = builds["created_at"].min()
@@ -70,15 +69,32 @@ def monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     m_end = pandas.Timestamp(year=t_end.year, month=t_end.month, day=1) + pandas.DateOffset(months=1)
 
     month_starts = []
-    n_users = []
+    n_values = []
     m_current = m_start
     while m_current < m_end:
         idxs = (builds["created_at"] >= m_current) & (builds["created_at"] < m_current+month_offset)
-        n_users.append(builds["org_id"].loc[idxs].nunique())
+        n_values.append(builds[column].loc[idxs].nunique())
         month_starts.append(m_current)
         m_current += month_offset
 
-    return np.array(n_users), np.array(month_starts)
+    return np.array(n_values), np.array(month_starts)
+
+
+def monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the number of unique users that appear in the data for each calendar month within the date ranges found in
+    the build data.
+    The second return value is an array of the start dates of each month corresponding to the counts in the first value.
+    """
+    return monthly_value(builds, "org_id")
+
+
+def monthly_builds(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the number of builds in the data for each calendar month within the date ranges found in the build data.
+    The second return value is an array of the start dates of each month corresponding to the counts in the first value.
+    """
+    return monthly_value(builds, "job_id")
 
 
 def builds_over_time(builds: pandas.DataFrame, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:

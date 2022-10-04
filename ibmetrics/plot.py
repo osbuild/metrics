@@ -52,15 +52,33 @@ def monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     if not ax:
         ax = plt.axes()
 
-    mau, months = metrics.monthly_users(builds)
-    ax.bar(months, mau, width=20, zorder=2)
-    for mo, nu in zip(months, mau):
+    user_counts, months = metrics.monthly_users(builds)
+    ax.bar(months, user_counts, width=20, zorder=2)
+    for mo, nu in zip(months, user_counts):
         plt.text(mo, nu, str(nu), size=16, ha="center")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
     ax.set_xticks(months, xlabels, rotation=45, ha="right")
     ax.grid(True)
     ax.set_title("Monthly users")
+
+
+def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Bar graph of the number of builds in each calendar month.
+    """
+    if not ax:
+        ax = plt.axes()
+
+    build_counts, months = metrics.monthly_builds(builds)
+    ax.bar(months, build_counts, width=20, zorder=2)
+    for mo, nu in zip(months, build_counts):
+        plt.text(mo, nu, str(nu), size=16, ha="center")
+
+    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
+    ax.set_xticks(months, xlabels, rotation=45, ha="right")
+    ax.grid(True)
+    ax.set_title("Monthly builds")
 
 
 def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
