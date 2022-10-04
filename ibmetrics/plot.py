@@ -13,9 +13,11 @@ from typing import Optional, Set
 from . import metrics
 
 
-def build_counts(builds: pandas.DataFrame, p_days: int):
+def build_counts(builds: pandas.DataFrame, p_days: int, ax: Optional[plt.Axes] = None):
+    if not ax:
+        ax = plt.axes()
+
     t_starts, counts = metrics.builds_over_time(builds, period=timedelta(days=p_days))
-    ax = plt.axes()
     ax.plot(t_starts, counts, ".b", markersize=12, label="n builds")
 
     builds_trend = _moving_average(counts)
@@ -52,9 +54,12 @@ def monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     ax.set_title("Monthly users")
 
 
-def image_types(builds: pandas.DataFrame):
+def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    if not ax:
+        ax = plt.axes()
+
     image_types = builds["image_type"].value_counts()
-    plt.pie(image_types.values, labels=image_types.index)
+    ax.pie(image_types.values, labels=image_types.index)
 
 
 def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
