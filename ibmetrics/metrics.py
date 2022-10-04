@@ -5,7 +5,8 @@ import pandas
 
 import numpy as np
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Set, Tuple
+from datetime import datetime, timedelta
 
 
 def summarise(summary: Dict[str, Any]) -> str:
@@ -34,7 +35,7 @@ def summarize(summary: Dict[str, Any]) -> str:
     return summarise(summary)
 
 
-def get_summary(builds: pandas.DataFrame) -> Dict[str, Any]:
+def make_summary(builds: pandas.DataFrame) -> Dict[str, Any]:
     """
     Return a dictionary that summarises the data in builds.
     The dictionary can be consumed by summarise() to create a human-readable text summary of the data.
@@ -52,7 +53,7 @@ def get_summary(builds: pandas.DataFrame) -> Dict[str, Any]:
     return summary
 
 
-def get_monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+def monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns the number of unique users that appear in the data for each calendar month within the date ranges found in
     the build data.
@@ -78,3 +79,70 @@ def get_monthly_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]
         m_current += month_offset
 
     return np.array(n_users), np.array(month_starts)
+
+
+def builds_over_time(builds: pandas.DataFrame, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
+    t_start = builds["created_at"].min()
+    t_end = builds["created_at"].max()
+    bin_starts = []
+    n_builds = []
+    while t_start+period < t_end:
+        idxs = (builds["created_at"] >= t_start) & (builds["created_at"] < t_start+period)
+        n_builds.append(sum(idxs))
+        bin_starts.append(t_start)
+        t_start += period
+
+    return np.array(bin_starts), np.array(n_builds)
+
+
+def repeat_orgs(builds: pandas.DataFrame, min_builds: int, period: timedelta) -> Set[str]:
+    """
+    Return a list of org_ids that have built at least 'min_builds' in a period of 'period'.
+    """
+    orgs = builds["org_id"].unique()
+
+    active_orgs = set()
+
+    pd_period = pandas.Timedelta(period)  # convert for compatibility with numpy types
+
+    for org in orgs:
+        org_build_idxs = builds["org_id"] == org
+        org_build_dates = builds["created_at"].loc[org_build_idxs]
+        periods = np.diff(org_build_dates.sort_values())
+
+        # if a sum of min_builds-1 periods is less than period, then the org is identified as a repeat/active org
+        for p_idx, _ in enumerate(periods):
+            p_sum = np.sum(periods[p_idx:p_idx+min_builds-1])
+
+            if p_sum < pd_period:
+                active_orgs.add(org)
+
+    return active_orgs
+
+
+def org_build_days(builds: pandas.DataFrame) -> pandas.DataFrame:
+    """
+    Org IDs associated with the dates where they had at least one build.
+    """
+    build_days: List[Dict[str, Any]] = []
+    for org_id in builds["org_id"].unique():
+        org_builds = builds.loc[builds["org_id"] == org_id]
+        dates = np.unique(org_builds["created_at"].values.astype("datetime64[D]"))  # round to day
+        build_days.append({"org_id": org_id, "build_dates": dates})
+
+    return pandas.DataFrame.from_dict(build_days)
+
+
+def active_orgs(builds: pandas.DataFrame, min_days: int, recent_limit: int) -> pandas.Series:
+    """
+    Returns a Series of org_ids for orgs that have builds on at least min_days separate days and the most recent one was
+    after recent_limit days ago.
+    """
+    build_days = org_build_days(builds)
+    counts = build_days["build_dates"].apply(len)
+    build_days = build_days.loc[counts >= min_days]
+    cutoff = datetime.now() - timedelta(days=recent_limit)
+    most_recent_dates = build_days["build_dates"].apply(max)
+    recent_idxs = most_recent_dates > cutoff
+    recent_orgs = build_days["org_id"].loc[recent_idxs]
+    return recent_orgs
