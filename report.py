@@ -34,32 +34,6 @@ def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: Li
     return builds
 
 
-def get_summary(builds):
-    out = ["Summary"]
-    out += ["=======\n"]
-    start = builds["created_at"].min()
-    end = builds["created_at"].max()
-    out += [f"Period: {start} - {end}\n"]
-
-    out += [f"- Total builds: {len(builds)}"]
-    out += [f"- Number of users: {len(builds['org_id'].unique())}"]
-
-    n_with_packages = sum(1 if len(pkg) else 0 for pkg in builds["packages"])
-    out += [f"- Builds with packages: {n_with_packages}"]
-
-    avg_packages = np.mean([len(pkg) for pkg in builds["packages"]])
-    out += [f"- Average number of packages per build: {avg_packages:.2f}"]
-    avg_packages_nonempty = np.mean([len(pkg) for pkg in builds["packages"] if len(pkg)])
-    out += [f"- Average number of packages per build (excluding empty): {avg_packages_nonempty:.2f}"]
-
-    n_with_fs = sum(1 if len(fs) else 0 for fs in builds["filesystem"])
-    out += [f"- Builds with filesystem customizations: {n_with_fs}"]
-
-    n_with_repos = sum(1 if len(repos) else 0 for repos in builds["payload_repositories"])
-    out += [f"- Builds with custom repos: {n_with_repos}"]
-    return "\n".join(out)
-
-
 def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame, start: datetime):
     end = start + timedelta(days=7)  # one week
     week_idxs = (builds["created_at"] >= start) & (builds["created_at"] < end)
@@ -374,9 +348,8 @@ def main():
         end = builds["created_at"].max()
 
     builds = slice_time(builds, start, end)
-    print(f"{len(builds)} between {start} and {end}")
 
-    print(get_summary(builds))
+    print(metrics.summarise(metrics.get_summary(builds)))
 
     print_frequent_packages(builds)
     print_image_type_counts(builds)
