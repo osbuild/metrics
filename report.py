@@ -191,13 +191,13 @@ def print_image_type_counts(builds):
     print("---------------------------------")
 
 
-def print_frequent_orgs(builds: pandas.DataFrame, users: pandas.DataFrame, limit=20):
+def print_frequent_orgs(builds: pandas.DataFrame, users: Optional[pandas.DataFrame] = None, limit=20):
 
     print("## Biggest orgs")
     org_counts = builds["account_number"].value_counts()
     for idx, (acc_num, count) in enumerate(org_counts.iloc[:limit].items()):
         name = acc_num
-        if len(users):
+        if users is not None:
             user_idx = users["accountNumber"].astype(str) == acc_num
             if sum(user_idx) == 1:
                 name = users["name"][user_idx].values.item()
