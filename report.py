@@ -11,27 +11,7 @@ import matplotlib.dates as mdates
 import scipy.signal as sp
 
 
-from ibmetrics import reader
-
-
-def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: List[str]) -> pandas.DataFrame:
-
-    if not len(users) or not len(patterns):
-        # no filtering possible
-        return builds
-
-    def get_ids(value: str) -> pandas.Series:
-        matching_idxs = users["name"].str.match(value, case=False)
-        return users["accountNumber"].loc[matching_idxs].astype(str)
-
-    for pattern in patterns:
-        if not pattern:
-            continue
-
-        for rm_id in get_ids(pattern):
-            builds = builds.loc[builds["account_number"] != rm_id]
-
-    return builds
+from ibmetrics import data, metrics, reader
 
 
 def print_weekly_users(builds: pandas.DataFrame, users: pandas.DataFrame, start: datetime):
@@ -110,11 +90,6 @@ def moving_average(values):
     sums = np.cumsum(values)
     weights = np.arange(1, len(sums)+1, 1)
     return sums / weights
-
-
-def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime):
-    idxs = (builds["created_at"] >= start) & (builds["created_at"] <= end)
-    return builds.loc[idxs]
 
 
 def plot_build_counts(builds: pandas.DataFrame, start: datetime, end: datetime, p_days: int):
@@ -334,7 +309,7 @@ def main():
         with open(args.userfilter, encoding="utf-8") as filterfile:
             user_filter = filterfile.read().split("\n")
 
-    builds = filter_users(builds, users, user_filter)
+    builds = data.filter_users(builds, users, user_filter)
     print(f"{len(builds)} records after user filtering")
 
     if args.start:
@@ -347,7 +322,7 @@ def main():
     else:
         end = builds["created_at"].max()
 
-    builds = slice_time(builds, start, end)
+    builds = data.slice_time(builds, start, end)
 
     print(metrics.summarise(metrics.get_summary(builds)))
 
