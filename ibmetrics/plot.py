@@ -18,7 +18,7 @@ def build_counts(builds: pandas.DataFrame, p_days: int):
     ax = plt.axes()
     ax.plot(t_starts, counts, ".b", markersize=12, label="n builds")
 
-    builds_trend = moving_average(counts)
+    builds_trend = _moving_average(counts)
     ax.plot(t_starts, builds_trend, "-b", label="builds mov. avg.")
 
     ax.set_xticks(t_starts)
@@ -31,7 +31,7 @@ def build_counts(builds: pandas.DataFrame, p_days: int):
     ax.grid(True)
 
 
-def moving_average(values):
+def _moving_average(values):
     sums = np.cumsum(values)
     weights = np.arange(1, len(sums)+1, 1)
     return sums / weights
