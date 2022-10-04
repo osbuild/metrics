@@ -99,6 +99,17 @@ def monthly_new_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     ax.set_title("Monthly new users")
 
 
+def users_sliding_window(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    if not ax:
+        ax = plt.axes()
+
+    user_counts, dates = metrics.value_sliding_window(builds, "org_id", 30)
+    ax.plot(dates, user_counts, zorder=2)
+    ax.grid(True)
+    ax.set_xlabel("Window end date")
+    ax.set_title("Number of users in the previous 30 days")
+
+
 def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     """
     Pie chart of the distribution of image types built.

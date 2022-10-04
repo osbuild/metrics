@@ -113,6 +113,30 @@ def monthly_new_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]
     return monthly_users(df)
 
 
+def value_sliding_window(builds: pandas.DataFrame, column: str, window: int) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the number of unique values for the given column that appear in the data within a sliding window of a given
+    width (in days).
+    The second return value is an array of the end dates for each window corresponding to each element in the first
+    value.
+    """
+    window = pandas.Timedelta(days=window)
+    t_start = builds["created_at"].min()
+    t_end = builds["created_at"].max()
+    step = pandas.Timedelta(days=1)  # slide the window 1 day each time
+
+    end_dates = []
+    n_values = []
+    t_current = t_start + window  # start with a full window
+    while t_current < t_end:
+        idxs = (builds["created_at"] >= t_current-window) & (builds["created_at"] < t_current)
+        n_values.append(builds[column].loc[idxs].nunique())
+        end_dates.append(t_current)
+        t_current += step
+
+    return np.array(n_values), np.array(end_dates)
+
+
 def builds_over_time(builds: pandas.DataFrame, period: timedelta) -> Tuple[np.ndarray, np.ndarray]:
     t_start = builds["created_at"].min()
     t_end = builds["created_at"].max()
