@@ -14,6 +14,9 @@ from . import metrics
 
 
 def build_counts(builds: pandas.DataFrame, p_days: int, ax: Optional[plt.Axes] = None):
+    """
+    Bar graph of the number of builds in a given period specified by p_days.
+    """
     if not ax:
         ax = plt.axes()
 
@@ -34,12 +37,18 @@ def build_counts(builds: pandas.DataFrame, p_days: int, ax: Optional[plt.Axes] =
 
 
 def _moving_average(values):
+    """
+    Calculate the moving average for a series of values.
+    """
     sums = np.cumsum(values)
     weights = np.arange(1, len(sums)+1, 1)
     return sums / weights
 
 
 def monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Bar graph of the number of users that appear in each calendar month.
+    """
     if not ax:
         ax = plt.axes()
 
@@ -55,6 +64,9 @@ def monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
 
 def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Pie chart of the distribution of image types built.
+    """
     if not ax:
         ax = plt.axes()
 
@@ -63,6 +75,10 @@ def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
 
 def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Bar graph of users per seven day period. Shows new users alongside total users per period.
+    This function does not align periods to calendar weeks.
+    """
     p_start = builds["created_at"].min()
     last_date = builds["created_at"].max()
 
