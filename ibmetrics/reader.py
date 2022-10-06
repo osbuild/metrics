@@ -29,21 +29,15 @@ CONVERTERS = {
 }
 
 
+def convert(name, data):
+    if f := CONVERTERS.get(name):
+        return f(data)
+    else:
+        return data
+
+
 def _parse_dump_row(line: str) -> List[str]:
     return [s.strip() for s in line.split("|")]
-
-
-def _make_data_frame(headers: List[str], data: List[List[str]]) -> pandas.DataFrame:
-    data_str = np.array(data)
-    data_dict = {}
-    for name, column_str in zip(headers, data_str.transpose()):
-        if converter := CONVERTERS.get(name):
-            column = converter(column_str)
-        else:
-            column = column_str
-        data_dict[name] = column
-
-    return pandas.DataFrame(data=data_dict)
 
 
 def read_dump(fname: os.PathLike) -> pandas.DataFrame:
@@ -51,30 +45,32 @@ def read_dump(fname: os.PathLike) -> pandas.DataFrame:
     Parses a database dump and returns the data formatted
     """
     with open(fname, encoding="utf-8") as dumpfile:
-        lines = dumpfile.read().split("\n")
+        # first line are column names
+        names = _parse_dump_row(next(dumpfile))
 
-    # first line should be headers (column names)
-    headers = _parse_dump_row(lines[0])
+        # second line is a row of dashes; will ignore
+        next(dumpfile)
 
-    row_count_re = re.compile(r"\((?P<rows>[0-9]+) rows\)")
+        row_count_re = re.compile(r"\((?P<rows>[0-9]+) rows\)\n")
 
-    # second line is a row of dashes; will ignore
-    rows = []
-    row_count = -1
-    for line in lines[2:]:
-        if match := row_count_re.fullmatch(line):
-            groups = match.groupdict()
-            if row_count_str := groups.get("rows"):
-                row_count = int(row_count_str)
-        if "|" in line:  # columns are separated by pipes; use it to identify data rows
-            rows.append(_parse_dump_row(line))
+        data = { n: [] for n in names }
+        row_count = -1
+        for line in dumpfile:
+            if match := row_count_re.fullmatch(line):
+                row_count = int(match.group("rows"))
+                break
+            for i, v in enumerate(_parse_dump_row(line)):
+                data[names[i]].append(v)
+
+    for name, column in data.items():
+        data[name] = convert(name, column)
+
+    df = pandas.DataFrame(data=data)
 
     if row_count == -1:
         print("WARNING: failed to parse row count", file=sys.stderr)
-    elif row_count != len(rows):
-        print(f"WARNING: read {len(rows)} records but row count in dump footer states {row_count} rows",
+    elif row_count != len(df):
+        print(f"WARNING: read {len(df)} records but row count in dump footer states {row_count} rows",
               file=sys.stderr)
 
-    data_df = _make_data_frame(headers, rows)
-
-    return data_df
+    return df
