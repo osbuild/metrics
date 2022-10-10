@@ -1,0 +1,31 @@
+name: Checks
+
+# NOTE: Restricting branches prevents jobs from being doubled since
+# a push to a pull request triggers two events.
+on:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - main
+
+jobs:
+  python-lint:
+    name: "🐍 Lint"
+    runs-on: ubuntu-latest
+    container:
+      image: registry.fedoraproject.org/fedora:36
+    steps:
+
+      - name: Install build and test dependencies
+        run: dnf -y install python3-pylint git-core
+
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Analysing the code with pylint
+        run: |
+          python3 -m pylint -v ./ibmetrics
