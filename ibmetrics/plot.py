@@ -1,14 +1,13 @@
 """
 Plotting functions
 """
-import pandas
-
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import numpy as np
-
 from datetime import timedelta
 from typing import Optional, Set
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas
 
 from . import metrics
 
@@ -70,9 +69,9 @@ def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     if not ax:
         ax = plt.axes()
 
-    build_counts, months = metrics.monthly_builds(builds)
-    ax.bar(months, build_counts, width=20, zorder=2)
-    for mo, nu in zip(months, build_counts):
+    counts, months = metrics.monthly_builds(builds)
+    ax.bar(months, counts, width=20, zorder=2)
+    for mo, nu in zip(months, counts):
         plt.text(mo, nu, str(nu), size=16, ha="center")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
@@ -117,8 +116,8 @@ def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     if not ax:
         ax = plt.axes()
 
-    image_types = builds["image_type"].value_counts()
-    ax.pie(image_types.values, labels=image_types.index)
+    types = builds["image_type"].value_counts()
+    ax.pie(types.values, labels=types.index)
 
 
 def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):

@@ -1,12 +1,11 @@
 """
 Functions for calculating metrics based on the build data.
 """
-import pandas
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Set, Tuple
 
 import numpy as np
-
-from typing import Any, Dict, List, Set, Tuple
-from datetime import datetime, timedelta
+import pandas
 
 
 def summarise(summary: Dict[str, Any]) -> str:
@@ -157,7 +156,7 @@ def repeat_orgs(builds: pandas.DataFrame, min_builds: int, period: timedelta) ->
     """
     orgs = builds["org_id"].unique()
 
-    active_orgs = set()
+    rep_orgs = set()
 
     pd_period = pandas.Timedelta(period)  # convert for compatibility with numpy types
 
@@ -171,9 +170,9 @@ def repeat_orgs(builds: pandas.DataFrame, min_builds: int, period: timedelta) ->
             p_sum = np.sum(periods[p_idx:p_idx+min_builds-1])
 
             if p_sum < pd_period:
-                active_orgs.add(org)
+                rep_orgs.add(org)
 
-    return active_orgs
+    return rep_orgs
 
 
 def org_build_days(builds: pandas.DataFrame) -> pandas.DataFrame:
