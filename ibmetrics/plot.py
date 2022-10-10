@@ -126,7 +126,7 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     Bar graph of users per seven day period. Shows new users alongside total users per period.
     This function does not align periods to calendar weeks.
     """
-    p_start = builds["created_at"].min()
+    first_date = builds["created_at"].min()
     last_date = builds["created_at"].max()
 
     users_so_far: Set[str] = set()
@@ -135,6 +135,7 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     start_dates = []
 
+    p_start = first_date
     while p_start < last_date:
         end = p_start + timedelta(days=7)  # one week
         week_idxs = (builds["created_at"] >= p_start) & (builds["created_at"] < end)
@@ -156,18 +157,16 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     ax.bar(np.array(start_dates)+bar_shift, n_week_users, width=2, color="blue", label="n users")
     ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
     ax.legend(loc="best")
-    start_month = p_start.replace(day=1)
+    month_offset = pandas.DateOffset(months=1)
+
+    start_month = first_date.replace(day=1)
     end_month = last_date.replace(month=last_date.month+1, day=1)
+    end_month = last_date.replace(day=1) + month_offset
     xticks = []
     tick = start_month
     while tick <= end_month:
         xticks.append(tick)
-        month = tick.month
-        year = tick.year
-        if month + 1 > 12:
-            tick = tick.replace(year=year+1, month=1)
-        else:
-            tick = tick.replace(month=month+1)
+        tick += month_offset
 
     ax.set_xticks(xticks)
     ax.grid(True)
