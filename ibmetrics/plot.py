@@ -120,6 +120,18 @@ def imagetype_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     ax.pie(types.values, labels=types.index)
 
 
+def footprint_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Pie chart of the distribution of footprints. See metrics.footprints() for details.
+    """
+    if not ax:
+        ax = plt.axes()
+
+    builds_footprints = metrics.footprints(builds)
+    feet = builds_footprints["footprint"].value_counts()
+    ax.pie(feet.values, labels=feet.index)
+
+
 def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     """
     Bar graph of users per seven day period. Shows new users alongside total users per period.
