@@ -106,7 +106,7 @@ def main():
 
     # image type breakdown
     plt.figure(figsize=(16, 9), dpi=100)
-    ib.plot.image_types(builds)
+    ib.plot.imagetype_builds(builds)
     imgname = img_basename + "-image_types.png"
     plt.savefig(imgname)
     print(f"Saved figure {imgname}")

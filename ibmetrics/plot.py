@@ -109,7 +109,7 @@ def users_sliding_window(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None
     ax.set_title("Number of users in the previous 30 days")
 
 
-def image_types(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+def imagetype_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     """
     Pie chart of the distribution of image types built.
     """
