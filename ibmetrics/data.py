@@ -1,10 +1,10 @@
 """
 Functions for cleaning or transforming the build data.
 """
-import pandas
-
 from datetime import datetime
 from typing import List
+
+import pandas
 
 
 def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: List[str]) -> pandas.DataFrame:

@@ -1,16 +1,15 @@
 """
 The reader module provides functions for loading data.
 """
+import json
 import os
 import re
 import sys
-import json
 
 from typing import List
 
-import pandas
-
 import numpy as np
+import pandas
 
 
 def _list_reader(col):
@@ -32,8 +31,8 @@ CONVERTERS = {
 def convert(name, data):
     if f := CONVERTERS.get(name):
         return f(data)
-    else:
-        return data
+
+    return data
 
 
 def _parse_dump_row(line: str) -> List[str]:
