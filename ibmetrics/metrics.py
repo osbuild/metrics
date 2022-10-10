@@ -201,3 +201,18 @@ def active_orgs(builds: pandas.DataFrame, min_days: int, recent_limit: int) -> p
     recent_idxs = most_recent_dates > cutoff
     recent_orgs = build_days["org_id"].loc[recent_idxs]
     return recent_orgs
+
+
+def dau_over_mau(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the ratio of daily active users (DAU) over monthly active users (MAU, 30-day sliding window) for each day in
+    the data.
+    The second return value is an array of the end dates for each window corresponding to each element in the first
+    value.
+    """
+    dau, _ = value_sliding_window(builds, "org_id", 1)
+    mau, mau_dates = value_sliding_window(builds, "org_id", 30)
+
+    # slice off first 30 days of the DAUs since we don't have MAUs before that
+    dau = dau[-len(mau):]
+    return dau/mau, mau_dates

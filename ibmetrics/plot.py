@@ -174,3 +174,14 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     # rotate xtick labels 45 degrees cw for readability
     for label in ax.get_xticklabels():
         label.set_rotation(45)
+
+
+def dau_over_mau(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    if not ax:
+        ax = plt.axes()
+
+    mod, dates = metrics.dau_over_mau(builds)
+    ax.plot(dates, mod)
+    ax.grid(True)
+    ax.set_xlabel("Window end date")
+    ax.set_title("Daily users / Users in the previous 30 days")
