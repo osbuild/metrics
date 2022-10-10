@@ -32,4 +32,4 @@ jobs:
 
       - name: Analysing the code with pylint
         run: |
-          python3 -m pylint -v ./ibmetrics
+          python3 -m pylint -v --recursive=yes .
