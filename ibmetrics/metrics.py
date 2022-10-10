@@ -216,3 +216,31 @@ def dau_over_mau(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     # slice off first 30 days of the DAUs since we don't have MAUs before that
     dau = dau[-len(mau):]
     return dau/mau, mau_dates
+
+
+def footprints(builds: pandas.DataFrame) -> pandas.DataFrame:
+    """
+    Returns a new DataFrame that replaces the image type with a corresponding footprint.
+    Footprints are groups of image types:
+    - edge: rhel-edge-commit and rhel-edge-installer
+    - private-cloud: vsphere and guest-image
+    - bare-metal: image-installer
+    - gcp: gcp
+    - aws: aws
+    - azure: azure and vhd
+    """
+    type_footprint = {
+        "rhel-edge-commit": "edge",
+        "rhel-edge-installer": "edge",
+        "vsphere": "private-cloud",
+        "guest-image": "private-cloud",
+        "image-installer": "bare-metal",
+        "gcp": "gcp",
+        "aws": "aws",
+        "azure": "azure",
+        "vhd": "azure",
+    }
+
+    fp_df = builds.replace({"image_type": type_footprint})
+    fp_df.rename(columns={"image_type": "footprint"}, inplace=True)
+    return fp_df
