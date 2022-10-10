@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import pandas
 import matplotlib.pyplot as plt
@@ -10,15 +11,20 @@ from datetime import datetime
 import ibmetrics as ib
 
 
-def read_file(fname: os.PathLike) -> pandas.DataFrame:
+def read_file(fname: os.PathLike, recreate_cache=False) -> pandas.DataFrame:
     cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
     cache_dir = os.path.join(cache_home, "osbuild-metrics")
     os.makedirs(cache_dir, exist_ok=True)
     cache_fname = os.path.join(cache_dir, os.path.basename(os.path.splitext(fname)[0]) + ".pkl")
-    if os.path.exists(cache_fname):
+    if os.path.exists(cache_fname) and not recreate_cache:
         print(f"Using cached pickle file at {cache_fname}")
-        # TODO: handle exceptions
-        return pandas.read_pickle(cache_fname)
+        try:
+            return pandas.read_pickle(cache_fname)
+        except Exception as exc:
+            print(f"Error reading cached pickle file {cache_fname}: {exc}")
+            print("File may have been corrupted.")
+            print("You can recreate the cache with --recreate-cache")
+            sys.exit(1)
 
     builds = ib.reader.read_dump(fname)
     print(f"Saving cached pickle file at {cache_fname}")
@@ -46,6 +52,7 @@ def parse_args():
     parser.add_argument("--end", default=None, help="End date to use (newer data are ignored)")
     parser.add_argument("--userinfo", default=None, help="File containing user info (json)")
     parser.add_argument("--userfilter", default=None, help="File containing user names to remove from data")
+    parser.add_argument("--recreate-cache", action="store_true", help="Recreate cache file even if it exists")
 
     args = parser.parse_args()
     return args
@@ -56,7 +63,7 @@ def main():
     args = parse_args()
     data_fname = args.data
 
-    builds = read_file(data_fname)
+    builds = read_file(data_fname, args.recreate_cache)
     print(f"Imported {len(builds)} records")
 
     users = None
