@@ -244,3 +244,44 @@ def footprints(builds: pandas.DataFrame) -> pandas.DataFrame:
     fp_df = builds.replace({"image_type": type_footprint})
     fp_df.rename(columns={"image_type": "footprint"}, inplace=True)
     return fp_df
+
+
+def imagetype_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns two 1-D arrays:
+    The first is a list of unique org IDs.
+    The second is the number of image types that each corresponding org ID has created an image for.
+    """
+    org_ids: List[str] = list()
+    num_types: List[int] = list()
+    for org_id in builds["org_id"].unique():
+        org_builds = builds.loc[builds["org_id"] == org_id]
+        nit = org_builds["image_type"].nunique()
+
+        org_ids.append(org_id)
+        num_types.append(nit)
+
+    num_types.append(nit)
+
+    return np.array(org_ids), np.array(num_types)
+
+
+def footprint_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns two 1-D arrays:
+    The first is a list of unique org IDs.
+    The second is the number of footprints that each corresponding org ID has created an image for.
+    See metrics.footprint() for a description of the footprints.
+    """
+    builds_df = footprints(builds)
+
+    org_ids: List[str] = list()
+    num_fps: List[int] = list()
+    for org_id in builds_df["org_id"].unique():
+        org_builds = builds_df.loc[builds_df["org_id"] == org_id]
+        nfps = org_builds["footprint"].nunique()
+
+        org_ids.append(org_id)
+        num_fps.append(nfps)
+
+    return np.array(org_ids), np.array(num_fps)
