@@ -6,7 +6,6 @@ from datetime import datetime
 
 import pandas
 import matplotlib.pyplot as plt
-import scipy.signal as sp
 
 import ibmetrics as ib
 
@@ -31,19 +30,6 @@ def read_file(fname: os.PathLike, recreate_cache=False) -> pandas.DataFrame:
     print(f"Saving cached pickle file at {cache_fname}")
     builds.to_pickle(cache_fname)
     return builds
-
-
-def trendline(values):
-    values = list(values)
-    n_points = len(values)
-    half = n_points//2
-    kernel = sp.gaussian(n_points, std=7)
-    kernel /= sum(kernel)
-    # pad the original values with the last value for half the kernel size
-    values = values + ([values[-1]] * half)
-    tline = sp.convolve(values, kernel, mode="same")
-    tline = tline[:-half]
-    return tline.tolist()
 
 
 def parse_args():
