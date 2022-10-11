@@ -252,8 +252,8 @@ def imagetype_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndar
     The first is a list of unique org IDs.
     The second is the number of image types that each corresponding org ID has created an image for.
     """
-    org_ids: List[str] = list()
-    num_types: List[int] = list()
+    org_ids: List[str] = []
+    num_types: List[int] = []
     for org_id in builds["org_id"].unique():
         org_builds = builds.loc[builds["org_id"] == org_id]
         nit = org_builds["image_type"].nunique()
@@ -275,8 +275,8 @@ def footprint_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndar
     """
     builds_df = footprints(builds)
 
-    org_ids: List[str] = list()
-    num_fps: List[int] = list()
+    org_ids: List[str] = []
+    num_fps: List[int] = []
     for org_id in builds_df["org_id"].unique():
         org_builds = builds_df.loc[builds_df["org_id"] == org_id]
         nfps = org_builds["footprint"].nunique()
