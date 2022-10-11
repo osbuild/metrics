@@ -261,7 +261,6 @@ def imagetype_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndar
         org_ids.append(org_id)
         num_types.append(nit)
 
-    org_id
     num_types.append(nit)
 
     return np.array(org_ids), np.array(num_types)
