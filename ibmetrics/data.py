@@ -15,6 +15,8 @@ def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: Li
         # no filtering possible
         return builds
 
+    users = users.fillna({"name": "---"})
+
     def get_ids(value: str) -> pandas.Series:
         matching_idxs = users["name"].str.match(value, case=False)
         return users["accountNumber"].loc[matching_idxs].astype(str)
