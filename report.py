@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 
+from datetime import datetime
+
 import pandas
 import matplotlib.pyplot as plt
 import scipy.signal as sp
-
-from datetime import datetime
 
 import ibmetrics as ib
 
@@ -20,6 +20,7 @@ def read_file(fname: os.PathLike, recreate_cache=False) -> pandas.DataFrame:
         print(f"Using cached pickle file at {cache_fname}")
         try:
             return pandas.read_pickle(cache_fname)
+        # pylint: disable=broad-except
         except Exception as exc:
             print(f"Error reading cached pickle file {cache_fname}: {exc}")
             print("File may have been corrupted.")
