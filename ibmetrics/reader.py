@@ -52,7 +52,7 @@ def read_dump(fname: os.PathLike) -> pandas.DataFrame:
 
         row_count_re = re.compile(r"\((?P<rows>[0-9]+) rows\)\n")
 
-        data = { n: [] for n in names }
+        data = {n: [] for n in names}
         row_count = -1
         for line in dumpfile:
             if match := row_count_re.fullmatch(line):
