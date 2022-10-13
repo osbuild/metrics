@@ -165,8 +165,8 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
         ax = plt.axes()
 
     bar_shift = timedelta(days=1)
-    ax.bar(np.array(start_dates)+bar_shift, n_week_users, width=2, color="blue", label="n users")
-    ax.bar(start_dates, n_new_users, width=2, color="red", label="n new users")
+    ax.bar(np.array(start_dates)+bar_shift, n_week_users, width=2, label="n users")
+    ax.bar(start_dates, n_new_users, width=2, label="n new users")
     ax.legend(loc="best")
     month_offset = pandas.DateOffset(months=1)
 
