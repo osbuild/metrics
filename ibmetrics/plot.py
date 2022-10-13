@@ -117,7 +117,8 @@ def imagetype_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
         ax = plt.axes()
 
     types = builds["image_type"].value_counts()
-    ax.pie(types.values, labels=types.index)
+    labels = [f"{idx} ({val})" for idx, val in types.items()]
+    ax.pie(types.values, labels=labels)
 
 
 def footprint_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
@@ -129,7 +130,8 @@ def footprint_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     builds_footprints = metrics.footprints(builds)
     feet = builds_footprints["footprint"].value_counts()
-    ax.pie(feet.values, labels=feet.index)
+    labels = [f"{idx} ({val})" for idx, val in feet.items()]
+    ax.pie(feet.values, labels=labels)
 
 
 def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
