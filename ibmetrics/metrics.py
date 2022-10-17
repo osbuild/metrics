@@ -285,3 +285,21 @@ def footprint_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndar
         num_fps.append(nfps)
 
     return np.array(org_ids), np.array(num_fps)
+
+
+def single_footprint_users(builds: pandas.DataFrame) -> pandas.DataFrame:
+    """
+    Returns a DataFrame of single-footprint users.
+    The DataFrame has two columns: org_id and footprint.
+    It only contains the org IDs and footprint for users that only build images for a single footprint.
+    """
+    builds_df = footprints(builds)
+
+    org_fp: List[Dict[str, Any]] = []
+    for org_id in builds_df["org_id"].unique():
+        org_builds = builds_df.loc[builds_df["org_id"] == org_id]
+        nfps = org_builds["footprint"].nunique()
+        if nfps == 1:
+            org_fp.append({"org_id": org_id, "footprint": org_builds["footprint"].unique().item()})
+
+    return pandas.DataFrame.from_dict(org_fp)
