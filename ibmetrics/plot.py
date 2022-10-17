@@ -199,3 +199,20 @@ def dau_over_mau(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
     ax.grid(True)
     ax.set_xlabel("Window end date")
     ax.set_title("Daily users / Users in the previous 30 days")
+
+
+def single_footprint_distribution(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Bar graph showing the number of users that only build images for a single footprint, separated by footprint.
+    """
+    if not ax:
+        ax = plt.axes()
+
+    sfp_users = metrics.single_footprint_users(builds)
+    fp_counts = sfp_users["footprint"].value_counts()
+    ax.bar(fp_counts.index, fp_counts.values)
+    for idx, count in zip(fp_counts.index, fp_counts.values):
+        ax.text(idx, count, str(count), size=16, ha="center")
+    ax.set_xlabel("Footprints")
+    ax.set_title("Single-footprint user counts")
+    ax.set_ylim(ymax=max(fp_counts)+30)
