@@ -15,3 +15,5 @@ venv
 data/
 figs/
 .ipynb_checkpoints
+
+*.egg-info
