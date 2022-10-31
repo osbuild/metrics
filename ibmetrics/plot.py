@@ -32,7 +32,6 @@ def build_counts(builds: pandas.DataFrame, p_days: int, ax: Optional[plt.Axes] =
 
     ax.set_xlabel("dates")
     ax.legend(loc="best")
-    ax.grid(True)
 
 
 def _moving_average(values):
@@ -58,7 +57,6 @@ def monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
     ax.set_xticks(months, xlabels, rotation=45, ha="right")
-    ax.grid(True)
     ax.set_title("Monthly users")
 
 
@@ -96,7 +94,6 @@ def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
     ax.set_xticks(months, xlabels, rotation=45, ha="right")
-    ax.grid(True)
     ax.set_title("Monthly builds")
 
 
@@ -114,7 +111,6 @@ def monthly_new_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
     ax.set_xticks(months, xlabels, rotation=45, ha="right")
-    ax.grid(True)
     ax.set_title("Monthly new users")
 
 
@@ -124,7 +120,6 @@ def users_sliding_window(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None
 
     user_counts, dates = metrics.value_sliding_window(builds, "org_id", 30)
     ax.plot(dates, user_counts, zorder=2)
-    ax.grid(True)
     ax.set_xlabel("Window end date")
     ax.set_title("Number of users in the previous 30 days")
 
@@ -202,7 +197,6 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
         tick += month_offset
 
     ax.set_xticks(xticks)
-    ax.grid(True)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
 
     # rotate xtick labels 45 degrees cw for readability
@@ -216,7 +210,6 @@ def dau_over_mau(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     mod, dates = metrics.dau_over_mau(builds)
     ax.plot(dates, mod)
-    ax.grid(True)
     ax.set_xlabel("Window end date")
     ax.set_title("Daily users / Users in the previous 30 days")
 
