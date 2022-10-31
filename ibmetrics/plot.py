@@ -66,22 +66,20 @@ def monthly_users_stacked(builds: pandas.DataFrame, ax: Optional[plt.Axes] = Non
     """
     Bar graph of the number of users that appear in each calendar month; new users stacked on old.
     """
+
     if not ax:
         ax = plt.axes()
 
     user_counts, months = metrics.monthly_users(builds)
     new_user_counts, months = metrics.monthly_new_users(builds)
     old_user_counts = user_counts - new_user_counts
-    ax.bar(months, old_user_counts, width=20, zorder=2, label="Existing users")
-    ax.bar(months, new_user_counts, width=20, zorder=2, bottom=old_user_counts, label="New users")
-    # for mo, nu in zip(months, user_counts):
-    #     plt.text(mo, nu, str(nu), size=16, ha="center")
+    ax.bar(months, old_user_counts, width=27, color="#9b0000")
+    ax.bar(months, new_user_counts, width=27, color="#EE0000", bottom=old_user_counts, label="New users")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
     ax.set_xticks(months, xlabels, rotation=45, ha="right")
-    ax.grid(True)
-    ax.set_title("Monthly users")
-    ax.legend()
+    ax.set_title("Monthly Unique Users")
+    ax.legend(frameon=False)
 
 
 def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
