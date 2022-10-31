@@ -4,6 +4,7 @@ Plotting functions
 from datetime import timedelta
 from typing import Optional, Set
 
+import matplotlib
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
@@ -68,12 +69,18 @@ def monthly_users_stacked(builds: pandas.DataFrame, ax: Optional[plt.Axes] = Non
     user_counts, months = metrics.monthly_users(builds)
     new_user_counts, months = metrics.monthly_new_users(builds)
     old_user_counts = user_counts - new_user_counts
-    ax.bar(months, old_user_counts, width=27)
-    ax.bar(months, new_user_counts, width=27, bottom=old_user_counts, label="New users")
+    ax.bar(months, new_user_counts, width=27, bottom=old_user_counts)
+    ax.bar(months, old_user_counts, width=27, label="Recurring")
 
-    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
+    font_size = matplotlib.rcParams["font.size"]
+    for mo, count in zip(months, user_counts):
+        ax.text(mo, count-font_size/2, str(count), size=font_size*1.2, ha="center", va="top", color="white")
+
+    xlabels = [f"{mo.month_name()}" for mo in months]
     ax.set_xticks(months, xlabels)
-    ax.set_title("Monthly Unique Users")
+    ax.set_title("Organizations building at least one image")
+    plt.figtext(0.1, -0.2, "Source: Image Builder Production Database",
+                wrap=False, horizontalalignment='left', color="#9a9a9a")
     ax.legend()
 
 
