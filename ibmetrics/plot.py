@@ -20,10 +20,11 @@ def build_counts(builds: pandas.DataFrame, p_days: int, ax: Optional[plt.Axes] =
         ax = plt.axes()
 
     t_starts, counts = metrics.builds_over_time(builds, period=timedelta(days=p_days))
-    ax.plot(t_starts, counts, ".b", markersize=12, label="n builds")
+    counts_plot = ax.plot(t_starts, counts, ".", markersize=12, label="n builds")
 
-    builds_trend = _moving_average(counts)
-    ax.plot(t_starts, builds_trend, "-b", label="builds mov. avg.")
+    dot_color = counts_plot[0].get_color()
+    builds_trend = _moving_average(counts)  # reuse dot colour for trendline
+    ax.plot(t_starts, builds_trend, "-", color=dot_color, label="builds mov. avg.")
 
     ax.set_xticks(t_starts)
     # rotate xtick labels 45 degrees cw for readability
@@ -71,8 +72,8 @@ def monthly_users_stacked(builds: pandas.DataFrame, ax: Optional[plt.Axes] = Non
     user_counts, months = metrics.monthly_users(builds)
     new_user_counts, months = metrics.monthly_new_users(builds)
     old_user_counts = user_counts - new_user_counts
-    ax.bar(months, old_user_counts, width=27, color="#9b0000")
-    ax.bar(months, new_user_counts, width=27, color="#EE0000", bottom=old_user_counts, label="New users")
+    ax.bar(months, old_user_counts, width=27)
+    ax.bar(months, new_user_counts, width=27, bottom=old_user_counts, label="New users")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
     ax.set_xticks(months, xlabels, rotation=45, ha="right")
