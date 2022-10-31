@@ -27,10 +27,6 @@ def build_counts(builds: pandas.DataFrame, p_days: int, ax: Optional[plt.Axes] =
     ax.plot(t_starts, builds_trend, "-", color=dot_color, label="builds mov. avg.")
 
     ax.set_xticks(t_starts)
-    # rotate xtick labels 45 degrees cw for readability
-    for label in ax.get_xticklabels():
-        label.set_rotation(45)
-
     ax.set_xlabel("dates")
     ax.legend(loc="best")
 
@@ -57,7 +53,7 @@ def monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
         plt.text(mo, nu, str(nu), size=16, ha="center")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
-    ax.set_xticks(months, xlabels, rotation=45, ha="right")
+    ax.set_xticks(months, xlabels)
     ax.set_title("Monthly users")
 
 
@@ -76,9 +72,9 @@ def monthly_users_stacked(builds: pandas.DataFrame, ax: Optional[plt.Axes] = Non
     ax.bar(months, new_user_counts, width=27, bottom=old_user_counts, label="New users")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
-    ax.set_xticks(months, xlabels, rotation=45, ha="right")
+    ax.set_xticks(months, xlabels)
     ax.set_title("Monthly Unique Users")
-    ax.legend(frameon=False)
+    ax.legend()
 
 
 def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
@@ -94,7 +90,7 @@ def monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
         plt.text(mo, nu, str(nu), size=16, ha="center")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
-    ax.set_xticks(months, xlabels, rotation=45, ha="right")
+    ax.set_xticks(months, xlabels)
     ax.set_title("Monthly builds")
 
 
@@ -111,7 +107,7 @@ def monthly_new_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
         plt.text(mo, nu, str(nu), size=16, ha="center")
 
     xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
-    ax.set_xticks(months, xlabels, rotation=45, ha="right")
+    ax.set_xticks(months, xlabels)
     ax.set_title("Monthly new users")
 
 
@@ -199,10 +195,6 @@ def weekly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
 
     ax.set_xticks(xticks)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-
-    # rotate xtick labels 45 degrees cw for readability
-    for label in ax.get_xticklabels():
-        label.set_rotation(45)
 
 
 def dau_over_mau(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
