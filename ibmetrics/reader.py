@@ -6,7 +6,7 @@ import os
 import re
 import sys
 
-from typing import List
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas
@@ -39,7 +39,7 @@ def _parse_dump_row(line: str) -> List[str]:
     return [s.strip() for s in line.split("|")]
 
 
-def read_dump(fname: os.PathLike) -> pandas.DataFrame:
+def read_dump(fname: Union[os.PathLike, str]) -> pandas.DataFrame:
     """
     Parses a database dump and returns the data formatted
     """
@@ -52,7 +52,7 @@ def read_dump(fname: os.PathLike) -> pandas.DataFrame:
 
         row_count_re = re.compile(r"\((?P<rows>[0-9]+) rows\)\n")
 
-        data = {n: [] for n in names}
+        data: Dict[str, List] = {n: [] for n in names}
         row_count = -1
         for line in dumpfile:
             if match := row_count_re.fullmatch(line):
