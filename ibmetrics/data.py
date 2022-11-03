@@ -31,6 +31,25 @@ def filter_users(builds: pandas.DataFrame, users: pandas.DataFrame, patterns: Li
     return builds
 
 
+def get_filter_ids(users: pandas.DataFrame, patterns: List[str]) -> List[str]:
+    if users is None or not patterns:
+        # no filtering possible
+        return []
+
+    users = users.fillna({"name": "---"})
+
+    filter_ids: List[str] = []
+    for pattern in patterns:
+        if not pattern:
+            continue
+
+        matching_idxs = users["name"].str.match(pattern, case=False)
+        matching_ids = users["org_id"].loc[matching_idxs].unique()
+        filter_ids.extend(matching_ids)
+
+    return filter_ids
+
+
 def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime) -> pandas.DataFrame:
     """
     Return a filtered view of the data that only includes builds made between the given start and end time.
