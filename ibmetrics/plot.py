@@ -229,3 +229,66 @@ def single_footprint_distribution(builds: pandas.DataFrame, ax: Optional[plt.Axe
     ax.set_xlabel("Footprints")
     ax.set_title("Single-footprint user counts")
     ax.set_ylim(ymax=max(fp_counts)+30)
+
+
+def single_footprint_monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    """
+    Multi-bar graph of the number of single-footprint users that appear in each calendar month, separated by footprint.
+    """
+
+    if not ax:
+        ax = plt.axes()
+
+    # get org_ids of orgs that only build one footprint
+    sfp_users = metrics.single_footprint_users(builds, split_cloud=False)
+
+    # Add footprint column to each build
+    builds_wfp = metrics.footprints(builds, split_cloud=False)
+
+    # Filter out multi-footprint org_ids
+    builds_wfp = builds_wfp.loc[builds_wfp["org_id"].isin(sfp_users["org_id"])]
+
+    shift = 0
+    for footprint in builds_wfp["footprint"].unique():
+        # filter builds for the given footprint
+        fp_builds = builds_wfp.loc[builds_wfp["footprint"] == footprint]
+        # plot monthly users for the filtered set
+        user_counts, months = metrics.monthly_users(fp_builds)
+        months += pandas.Timedelta(days=shift)
+        # ax.plot(months, user_counts, linewidth=3, label=footprint)
+        ax.bar(months, user_counts, width=3, zorder=2, label=footprint)
+        shift += 3
+
+        # add numbers to bars
+        # for mo, nu in zip(months, user_counts):
+        #     plt.text(mo, nu, str(nu), size=16, ha="center")
+
+    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
+    ax.set_xticks(months, xlabels)
+    ax.set_title("Monthly users")
+    ax.legend()
+
+
+def footprint_monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = None):
+    if not ax:
+        ax = plt.axes()
+
+    # Add footprint column to each build
+    builds_wfp = metrics.footprints(builds, split_cloud=False)
+
+    shift = 0
+    for footprint in builds_wfp["footprint"].unique():
+        # filter builds for the given footprint
+        fp_builds = builds_wfp.loc[builds_wfp["footprint"] == footprint]
+        # plot monthly builds for the filtered set
+        counts, months = metrics.monthly_builds(fp_builds)
+        months += pandas.Timedelta(days=shift)
+        ax.bar(months, counts, width=3, zorder=2, label=footprint)
+        shift += 3
+        # for mo, nu in zip(months, counts):
+        #     plt.text(mo, nu, str(nu), size=16, ha="center")
+
+    xlabels = [f"{mo.month_name()} {mo.year}" for mo in months]
+    ax.set_xticks(months, xlabels)
+    ax.set_title("Monthly builds")
+    ax.legend()
