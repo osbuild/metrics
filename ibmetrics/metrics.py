@@ -218,7 +218,7 @@ def dau_over_mau(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     return dau/mau, mau_dates
 
 
-def footprints(builds: pandas.DataFrame) -> pandas.DataFrame:
+def footprints(builds: pandas.DataFrame, split_cloud=True) -> pandas.DataFrame:
     """
     Returns a new DataFrame that replaces the image type with a corresponding footprint.
     Footprints are groups of image types:
@@ -226,8 +226,10 @@ def footprints(builds: pandas.DataFrame) -> pandas.DataFrame:
     - private-cloud: vsphere and guest-image
     - bare-metal: image-installer
     - gcp: gcp
-    - aws: aws
+    - aws: ami
     - azure: azure and vhd
+
+    If split_cloud is False, gcp, aws, and azure are replaced by a single value 'cloud'.
     """
     type_footprint = {
         "rhel-edge-commit": "edge",
@@ -235,11 +237,26 @@ def footprints(builds: pandas.DataFrame) -> pandas.DataFrame:
         "vsphere": "private-cloud",
         "guest-image": "private-cloud",
         "image-installer": "bare-metal",
-        "gcp": "gcp",
-        "aws": "aws",
-        "azure": "azure",
-        "vhd": "azure",
     }
+
+    if split_cloud:
+        type_footprint.update(
+            {
+                "gcp": "gcp",
+                "ami": "aws",
+                "azure": "azure",
+                "vhd": "azure",
+            }
+        )
+    else:
+        type_footprint.update(
+            {
+                "gcp": "cloud",
+                "ami": "cloud",
+                "azure": "cloud",
+                "vhd": "cloud",
+            }
+        )
 
     fp_df = builds.replace({"image_type": type_footprint})
     fp_df.rename(columns={"image_type": "footprint"}, inplace=True)
@@ -287,13 +304,16 @@ def footprint_count_users(builds: pandas.DataFrame) -> Tuple[np.ndarray, np.ndar
     return np.array(org_ids), np.array(num_fps)
 
 
-def single_footprint_users(builds: pandas.DataFrame) -> pandas.DataFrame:
+def single_footprint_users(builds: pandas.DataFrame, split_cloud=True) -> pandas.DataFrame:
     """
     Returns a DataFrame of single-footprint users.
     The DataFrame has two columns: org_id and footprint.
     It only contains the org IDs and footprint for users that only build images for a single footprint.
+
+
+    If split_cloud is False, gcp, aws, and azure are considered a single footprint.
     """
-    builds_df = footprints(builds)
+    builds_df = footprints(builds, split_cloud)
 
     org_fp: List[Dict[str, Any]] = []
     for org_id in builds_df["org_id"].unique():
