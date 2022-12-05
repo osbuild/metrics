@@ -50,6 +50,17 @@ def get_filter_ids(users: pandas.DataFrame, patterns: List[str]) -> List[str]:
     return filter_ids
 
 
+def filter_orgs(data: pandas.DataFrame, filter_ids: List[str]) -> pandas.DataFrame:
+    """
+    Removes rows from data that have an 'org_id' that's included in the filter_ids.
+    """
+    for f_id in filter_ids:
+        keep_idxs = data["org_id"] != f_id
+        data = data.loc[keep_idxs]
+
+    return data
+
+
 def slice_time(builds: pandas.DataFrame, start: datetime, end: datetime) -> pandas.DataFrame:
     """
     Return a filtered view of the data that only includes builds made between the given start and end time.
