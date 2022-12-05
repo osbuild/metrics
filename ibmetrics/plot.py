@@ -336,4 +336,9 @@ def active_time(subscriptions: pandas.DataFrame):
     bar_width = 0.66
     plt.bar(months, np.array(durations)/3600/24, width=bar_width)
     ax.set_xlim(-bar_width * 2/3, len(months) - 1 + bar_width * 2/3)
-    fig.text(0.12, 0,  "Source: Red Hat Subscription Manager data", fontsize="small", color="#777777")
+    caption = ("Runtime is calculated as the period between registration and last\n"
+               "check-in. The data includes builds from customers through\n"
+               "console.redhat.com. Internal usage and registrations from\n"
+               "on-prem builds are excluded.\n\n"
+               "Source: Red Hat Subscription Manager data")
+    fig.text(0.12, -0.11, caption, fontsize="small", color="#777777", wrap=True)
