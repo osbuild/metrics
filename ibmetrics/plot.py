@@ -249,7 +249,7 @@ def single_footprint_monthly_users(builds: pandas.DataFrame, ax: Optional[plt.Ax
     builds_wfp = builds_wfp.loc[builds_wfp["org_id"].isin(sfp_users["org_id"])]
 
     shift = 0
-    for footprint in builds_wfp["footprint"].unique():
+    for footprint in sorted(builds_wfp["footprint"].unique()):
         # filter builds for the given footprint
         fp_builds = builds_wfp.loc[builds_wfp["footprint"] == footprint]
         # plot monthly users for the filtered set
@@ -277,7 +277,7 @@ def footprint_monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = 
     builds_wfp = metrics.footprints(builds, split_cloud=False)
 
     shift = 0
-    for footprint in builds_wfp["footprint"].unique():
+    for footprint in sorted(builds_wfp["footprint"].unique()):
         # filter builds for the given footprint
         fp_builds = builds_wfp.loc[builds_wfp["footprint"] == footprint]
         # plot monthly builds for the filtered set
