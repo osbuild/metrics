@@ -1,7 +1,7 @@
 """
 Plotting functions
 """
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Optional, Set
 
 import matplotlib
@@ -292,3 +292,48 @@ def footprint_monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = 
     ax.set_xticks(months, xlabels)
     ax.set_title("Monthly builds")
     ax.legend()
+
+
+def active_time(subscriptions: pandas.DataFrame):
+    matplotlib.rcParams["figure.dpi"] = 300
+    matplotlib.rcParams["font.size"] = 8
+
+    now = datetime.now()
+    month_start = datetime(year=now.year, month=now.month, day=1)
+    # start at the month-start of the first record
+    start = subscriptions["created"].values.min().astype("datetime64[M]")  # truncate to month
+    end = np.datetime64(str(month_start)).astype("datetime64[M]")  # convert and truncate
+
+    months = []
+    durations = []
+    for mstart in np.arange(start, end):
+        mstop = mstart + 1
+
+        # clip created to month
+        created = subscriptions["created"].astype("datetime64[s]")
+        created = created.clip(mstart, mstop)
+
+        # clip lastcheckin to month
+        lastcheckin = subscriptions["lastcheckin"].astype("datetime64[s]")
+        lastcheckin = lastcheckin.clip(mstart, mstop)
+
+        duration = np.sum(lastcheckin - created)
+        if duration.total_seconds() == 0:
+            continue
+        monthname = datetime.strptime(f"{mstart}", "%Y-%m").strftime("%B")
+        months.append(monthname)
+        durations.append(duration.total_seconds())
+
+    fig, ax = plt.subplots(figsize=(4, 4))
+    ax.grid(axis="y", color="#dddddd")
+    ax.spines["left"].set_visible(False)
+    ax.spines["bottom"].set(linewidth=1.1)
+    ax.xaxis.set_tick_params(size=0, pad=6)
+    ax.yaxis.set_tick_params(size=0)
+    ax.set_axisbelow(True)
+    ax.set_title("Total runtime of RHEL instances\ncreated from Image Builder, in days", loc="left", fontweight="bold")
+
+    bar_width = 0.66
+    plt.bar(months, np.array(durations)/3600/24, width=bar_width)
+    ax.set_xlim(-bar_width * 2/3, len(months) - 1 + bar_width * 2/3)
+    fig.text(0.12, 0,  "Source: Red Hat Subscription Manager data", fontsize="small", color="#777777")
