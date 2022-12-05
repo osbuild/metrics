@@ -1,0 +1,13 @@
+
+axes.spines.bottom: True
+axes.spines.left:   True
+axes.spines.top:    False
+axes.spines.right:  False
+
+axes.linewidth: 1
+
+axes.grid:          False
+
+axes.prop_cycle:    cycler('color', ['ee0000', '8f0000', 'f56d6d', '5f0000', 'fab6b6', 'fddbdb', '000000', '2e2e2e', 'dedede', '4d4d4d', 'c9c9c9'])
+
+legend.frameon:     False
