@@ -226,7 +226,7 @@ def footprints(builds: pandas.DataFrame, split_cloud=True) -> pandas.DataFrame:
     - private-cloud: vsphere and guest-image
     - bare-metal: image-installer
     - gcp: gcp
-    - aws: ami
+    - aws: ami and aws
     - azure: azure and vhd
 
     If split_cloud is False, gcp, aws, and azure are replaced by a single value 'cloud'.
@@ -242,18 +242,19 @@ def footprints(builds: pandas.DataFrame, split_cloud=True) -> pandas.DataFrame:
     if split_cloud:
         type_footprint.update(
             {
-                "gcp": "gcp",
                 "ami": "aws",
                 "azure": "azure",
+                "gcp": "gcp",
                 "vhd": "azure",
             }
         )
     else:
         type_footprint.update(
             {
-                "gcp": "cloud",
                 "ami": "cloud",
+                "aws": "cloud",
                 "azure": "cloud",
+                "gcp": "cloud",
                 "vhd": "cloud",
             }
         )
