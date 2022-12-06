@@ -317,7 +317,7 @@ def active_time(subscriptions: pandas.DataFrame):
         lastcheckin = subscriptions["lastcheckin"].astype("datetime64[s]")
         lastcheckin = lastcheckin.clip(mstart, mstop)
 
-        duration = np.sum(lastcheckin - created)
+        duration = (lastcheckin - created).sum()
         if duration.total_seconds() == 0:
             continue
         monthname = datetime.strptime(f"{mstart}", "%Y-%m").strftime("%B")
