@@ -294,7 +294,7 @@ def footprint_monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = 
     ax.legend()
 
 
-def active_time(subscriptions: pandas.DataFrame):
+def monthly_active_time(subscriptions: pandas.DataFrame):
     matplotlib.rcParams["figure.dpi"] = 300
     matplotlib.rcParams["font.size"] = 8
 
@@ -342,3 +342,26 @@ def active_time(subscriptions: pandas.DataFrame):
                "on-prem builds are excluded.\n\n"
                "Source: Red Hat Subscription Manager data")
     fig.text(0.12, -0.11, caption, fontsize="small", color="#777777", wrap=True)
+
+
+def active_time_distribution(subscriptions: pandas.DataFrame):
+    matplotlib.rcParams["figure.dpi"] = 300
+    matplotlib.rcParams["font.size"] = 8
+
+    created = subscriptions["created"].astype("datetime64[s]")
+    lastcheckin = subscriptions["lastcheckin"].astype("datetime64[s]")
+    durations = lastcheckin - created
+    dseconds = durations.map(pandas.Timedelta.total_seconds)
+
+    _, ax = plt.subplots(figsize=(4, 4))
+    # bar_width = 0.66
+    max_days = 90
+    plt.hist(dseconds/3600/24, bins=range(max_days))
+
+    ax.grid(axis="y", color="#dddddd")
+    ax.spines["left"].set_visible(False)
+    ax.spines["bottom"].set(linewidth=1.1)
+    ax.xaxis.set_tick_params(size=0, pad=6)
+    ax.yaxis.set_tick_params(size=0)
+    ax.set_axisbelow(True)
+    ax.set_title("Distribution of runtime of RHEL instances\ncreated from Image Builder, in days", loc="left", fontweight="bold")
