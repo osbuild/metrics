@@ -39,14 +39,26 @@ def make_summary(builds: pandas.DataFrame) -> Dict[str, Any]:
     Return a dictionary that summarises the data in builds.
     The dictionary can be consumed by summarise() to create a human-readable text summary of the data.
     """
+
+    def has_value(val):
+        # Truthiness of value that can be None, list, dictionary, or numpy array.
+        # Needed because the truthiness of numpy.array (i.e., bool(np.array)) is ambiguous and causes errors.
+        if val is None:
+            return False
+
+        if len(val) == 0:
+            return False
+
+        return True
+
     summary = {
         "start": builds["created_at"].min(),
         "end": builds["created_at"].max(),
         "n builds": builds.shape[0],
         "n users": builds["org_id"].nunique(),
-        "n builds with packages": builds["packages"].apply(bool).sum(),
-        "n builds with fs customizations": builds["filesystem"].apply(bool).sum(),
-        "n builds with custom repos": builds["payload_repositories"].apply(bool).sum(),
+        "n builds with packages": builds["packages"].apply(has_value).sum(),
+        "n builds with fs customizations": builds["filesystem"].apply(has_value).sum(),
+        "n builds with custom repos": builds["payload_repositories"].apply(has_value).sum(),
     }
 
     return summary
