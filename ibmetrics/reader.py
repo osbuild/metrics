@@ -1,6 +1,7 @@
 """
 The reader module provides functions for loading data.
 """
+import glob
 import json
 import os
 import re
@@ -73,3 +74,30 @@ def read_dump(fname: Union[os.PathLike, str]) -> pandas.DataFrame:
               file=sys.stderr)
 
     return df
+
+
+def read_parquet(path: Union[os.PathLike, str]) -> pandas.DataFrame:
+    """
+    Read data from a directory of parquet files. Data in the files are concatenated into a single DataFrame.
+    Only files in the directory with the .parquet extension are loaded. Other files are ignored. Subdirectories are not
+    traversed.
+    """
+    filelist = glob.glob(os.path.join(path, "*.parquet"))
+    if not filelist:
+        print(f"WARNING: no .parquet files found in {path}")
+        return pandas.DataFrame()
+
+    dataframes = []
+    for fname in filelist:
+        dataframes.append(pandas.read_parquet(fname))
+
+    builds = pandas.concat(dataframes, ignore_index=True)
+
+    return builds
+
+
+def read(path: Union[os.PathLike, str]) -> pandas.DataFrame:
+    """
+    Alias for read_parquet()
+    """
+    return read_parquet(path)
