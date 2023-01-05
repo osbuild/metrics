@@ -295,6 +295,8 @@ def footprint_monthly_builds(builds: pandas.DataFrame, ax: Optional[plt.Axes] = 
 
 
 def monthly_active_time(subscriptions: pandas.DataFrame):
+    # filter out rows without checkins
+    subscriptions = subscriptions.loc[subscriptions["lastcheckin"] != "None"]
     matplotlib.rcParams["figure.dpi"] = 300
     matplotlib.rcParams["font.size"] = 8
 
@@ -345,6 +347,7 @@ def monthly_active_time(subscriptions: pandas.DataFrame):
 
 
 def active_time_distribution(subscriptions: pandas.DataFrame):
+    subscriptions = subscriptions.loc[subscriptions["lastcheckin"] != "None"]
     matplotlib.rcParams["figure.dpi"] = 300
     matplotlib.rcParams["font.size"] = 8
 
